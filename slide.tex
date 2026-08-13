@@ -5,6 +5,7 @@
 % other packages
 \usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra}
 \usepackage{graphicx,pstricks,listings,stackengine}
+\usepackage{tikz}
 
 \author{韩志磊}
 \title{并发系统的崩溃语义及其形式化验证技术}
@@ -58,7 +59,28 @@
         \item 算（经典形式语义学）：规定与平台无关的程序执行语义
         \item 存（{\color{red}内存模型}）：刻画访存的顺序与语义
     \end{itemize}
-    % MARKER
+    \vspace{0.5em}
+    \centering
+    \begin{tikzpicture}[x=1cm,y=1cm]
+        \draw[very thick, gray!70] (0,0) -- (11.2,0);
+
+        \foreach \x/\idx in {1.4/1,5.6/2,9.8/3} {
+            \only<\idx->{
+                \fill[tsinghua] (\x,0) circle (2.5pt);
+            }
+        }
+
+        \only<1->{\node[above=0.6cm] at (1.4,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
+        \only<2->{\node[above=0.6cm] at (5.6,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
+        \only<3->{\node[above=0.6cm] at (9.8,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
+
+        \node[below=0.35cm] at (1.4,0) {串行};
+        \node[below=0.35cm] at (5.6,0) {顺序一致性};
+        \node[below=0.35cm] at (9.8,0) {弱内存模型};
+        \node[below=0.9cm] at (1.4,0) {1940s $\sim$ 1960s};
+        \node[below=0.9cm] at (5.6,0) {1979};
+        \node[below=0.9cm] at (9.8,0) {1990s -- 2010s};
+    \end{tikzpicture}
 \end{frame}
 
 \begin{frame}{用Beamer很高大上？}
