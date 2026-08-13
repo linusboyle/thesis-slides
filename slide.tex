@@ -3,9 +3,11 @@
 \usepackage[T1]{fontenc}
 
 % other packages
-\usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra}
+\usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra, mathtools}
 \usepackage{graphicx,pstricks,listings,stackengine}
+\usepackage{xspace}
 \usepackage{tikz}
+\usetikzlibrary{arrows.meta}
 
 \author{韩志磊}
 \title{并发系统的崩溃语义及其形式化验证技术}
@@ -33,6 +35,9 @@
     frame=shadowbox,
 }
 
+\input{macros}
+
+
 \begin{document}
 
 \kaishu
@@ -57,12 +62,12 @@
     % 存与算是计算系统发展的两个维度，也对应着形式化语义模型的发展脉络。形式
     \begin{itemize}
         \item 算（经典形式语义学）：规定与平台无关的程序执行语义
-        \item 存（{\color{red}内存模型}）：刻画访存的顺序与语义
+        \item 存（\highlight{内存模型}）：刻画访存操作的顺序与语义
     \end{itemize}
     \vspace{0.5em}
     \centering
     \begin{tikzpicture}[x=1cm,y=1cm]
-        \draw[very thick, gray!70] (0,0) -- (11.2,0);
+        \draw[very thick, gray!70, -{Latex[length=2mm]}] (0,0) -- (11.2,0);
 
         \foreach \x/\idx in {1.4/1,5.6/2,9.8/3} {
             \only<\idx->{
@@ -74,40 +79,91 @@
         \only<2->{\node[above=0.6cm] at (5.6,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
         \only<3->{\node[above=0.6cm] at (9.8,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
 
-        \node[below=0.35cm] at (1.4,0) {串行};
-        \node[below=0.35cm] at (5.6,0) {顺序一致性};
-        \node[below=0.35cm] at (9.8,0) {弱内存模型};
-        \node[below=0.9cm] at (1.4,0) {1940s $\sim$ 1960s};
-        \node[below=0.9cm] at (5.6,0) {1979};
-        \node[below=0.9cm] at (9.8,0) {1990s -- 2010s};
+        \only<1->{\node[below=0.35cm] at (1.4,0) {串行};}
+        \only<2->{\node[below=0.35cm] at (5.6,0) {顺序一致性};}
+        \only<3->{\node[below=0.35cm] at (9.8,0) {弱内存模型};}
+        \only<1->{\node[below=0.9cm] at (1.4,0) {1940s $\sim$ 1960s};}
+        \only<2->{\node[below=0.9cm] at (5.6,0) {1979};}
+        \only<3->{\node[below=0.9cm] at (9.8,0) {1990s $\sim$ 2010s};}
     \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{用Beamer很高大上？}
-    \begin{itemize}[<+-| alert@+>] % 当然，除了alert，手动在里面插 \pause 也行
-        \item 大家都会\LaTeX{}，好多学校都有自己的Beamer主题
-        \item 中文支持请选择 Xe\LaTeX{} 编译选项
-        \item Overleaf项目地址位于 \url{https://www.overleaf.com/latex/templates/thu-beamer-theme/vwnqmzndvwyb}，可以直接使用
-        \item GitHub项目地址位于 \url{https://github.com/Trinkle23897/THU-Beamer-Theme}，如果有bug或者feature request可以去里面提issue
-    \end{itemize}
+\begin{frame}{新兴并发系统}
+    \begin{minipage}[c]{0.6\linewidth}
+        \begin{figure}
+            \centering
+            \includegraphics[width=\linewidth]{pic/memory-wall.png}
+        \end{figure}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[c]{0.35\linewidth}
+        本课题研究近年涌现出的一批新兴并发系统，探索其语义建模与验证技术。
+        \begin{itemize}
+            \item 安全攸关系统的数据安全$\rightarrow$非易失性内存系统
+            \item 内存墙问题$\rightarrow$分离式共享内存系统
+        \end{itemize}
+    \end{minipage}
 \end{frame}
 
+\begin{frame}{研究对象}
+    新兴并发系统中的\highlight{崩溃}会影响程序执行，而在传统的内存模型框架中并未考虑崩溃这一维度。
+
+    \vfill
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{ccc}
+    	\toprule
+    	传统多线程并发程序 & 非易失性内存系统 & 分离式共享内存系统 \\
+    	\midrule
+    	\includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps}
+    	    & \includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps}
+    	    & \includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps} \\
+    	单机        & 单机       & 分布式       \\
+    	DRAM      & NVMM     & DSM       \\
+    	---       & 2019（傲腾） & 2023（CXL） \\
+    	无崩溃模型     & 完全崩溃模型   & 部分崩溃模型    \\
+    	\bottomrule
+    \end{tabular}
+\end{frame}
+
+\begin{frame}{示例}
+    \begin{columns}
+        \begin{column}{0.4\textwidth}
+            \includegraphics[width=\linewidth]{pic/nvm-intro-exp.pdf}
+        \end{column}
+
+        \begin{column}{0.4\textwidth}
+            在NVMM下，程序$a \assigns 1; b \assigns 1$的一条可能执行：
+            \begin{itemize}
+                \item $a \assigns 1$ 先于 $b \assigns 1$ 被处理器发射
+                \item $b \assigns 1$ 先于 $a \assigns 1$ 到达主存
+                \item 假设在$a \assigns 1$ 到达主存前发生崩溃，观察到状态$a \mapsto 0, b \mapsto 1$
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
 
 \section{崩溃语义}
 
-\subsection{美化主题}
+\begin{frame}{内存层级}
+    % MARKER
+    \begin{columns}
+        \begin{column}{0.3\textwidth}
+            NVMM
+            \begin{figure}
+                \includegraphics[width=\linewidth]{pic/nvmm-hierarchy.pdf}
+            \end{figure}
+        \end{column}
 
-\begin{frame}{这一份主题与原始的THU Beamer Theme区别在于}
-    \begin{itemize}
-        \item 顶栏的小点变成一行而不是多行
-        \item 中文采用楷书
-        \item 剩下我改了啥我也忘了……我16年魔改的，都四年过去了（x
-        \item 更多该模板的功能可以参考 \url{https://www.latexstudio.net/archives/4051.html}
-        \item 下面列举出了一些Beamer的用法，部分节选自 \url{https://tuna.moe/event/2018/latex/}
-    \end{itemize}
+        \begin{column}{0.6\textwidth}
+            DSM
+            \begin{figure}
+                \includegraphics[width=\linewidth]{pic/cxl.pdf}
+            \end{figure}
+        \end{column}
+    \end{columns}
 \end{frame}
-
-\subsection{如何更好地做Beamer}
 
 \begin{frame}{Why Beamer}
     \begin{itemize}
