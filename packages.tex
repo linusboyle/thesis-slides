@@ -5,10 +5,49 @@
 \usepackage{pifont, stmaryrd}
 \usepackage{mathpartir} % \inferrule and mathpar env.
 \usepackage{dashrule} % advanced hlines
-% \usepackage{subcaption}
+\usepackage{subcaption}
 \usepackage{tabularray}
 \usepackage{rotating}
 
 
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta}
+\usepackage{pgfplots}
+% \usetikzlibrary{arrows.meta, positioning, fit, external}
+\usetikzlibrary{arrows.meta, positioning, fit, calc}
+
+% Execution Graph & Declarative Semantics
+\tikzset{
+    executiongraph/.style={
+        >=Stealth,
+        node distance=1.2cm and 1.5cm
+    },
+    % Node styles
+    persisted/.style={
+        draw=none, 
+        fill=hlcolor, 
+        rounded corners=2pt,
+        inner sep=3pt,
+        font=\sffamily
+    },
+    visible/.style={
+        font=\sffamily
+    },
+    invisible/.style={
+        font=\sffamily,
+        text=gray
+    },
+    % Bounding Box
+    failed/.style={
+        draw=BlueViolet,
+        line width=0.8pt,
+        rounded corners=2pt,
+        dashed,
+        inner sep=6pt
+    },
+    % Arrow styles
+    solidarrow/.style={->, shorten >=2pt, shorten <=2pt},
+    rfarrow/.style={->, shorten >=2pt, shorten <=2pt, color=teal, dashed},
+    tpoarrow/.style={->, dotted, color=red, line width=1pt, shorten >=2pt, shorten <=2pt},
+    moarrow/.style={->, dotted, color=orange, line width=1pt, shorten >=2pt, shorten <=2pt},
+    % dtpoarrow/.style={->, dotted, color=purple!80!black, line width=1pt, shorten >=2pt, shorten <=2pt}
+}

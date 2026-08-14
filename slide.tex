@@ -126,7 +126,7 @@
 
 \section{崩溃语义}
 
-\begin{frame}{示例}
+\begin{frame}{示例1}
     \centering
     \begin{columns}
         \begin{column}{0.4\textwidth}
@@ -147,7 +147,7 @@
     如何刻画上述程序行为？
 \end{frame}
 
-\begin{frame}{示例2}
+\begin{frame}[label=example]{示例2}
 	\begin{concurrentcode}
 		x \assigns 1; & a \assigns x; \expected{// 1}               \\
 		& b \assigns x; \expected{// 0}                  \\
@@ -183,7 +183,7 @@
     \end{columns}
 
     \begin{itemize}
-        \item 节点：崩溃的最小单元
+        \item 节点：崩溃发生的最小单元
         \begin{itemize}
             \item 处理节点：代表一台机器，运行若干线程
             \item 内存节点：包含若干共享变量的地址
@@ -195,42 +195,266 @@
     内存模型的刻画方法主要有两种：
     \begin{itemize}
         \item 操作语义：通过\highlight{变迁系统}模拟实际的内存层级行为
+        \begin{equation}
+        \inferrule{
+			B(\tau) = b \\\\ b = b_1 \cdot \writeE(x, v) \cdot b_2 \\\\
+			\writeE(x, \_) \not\in b_2
+		}{
+			(B, C, m) \xrightarrow{\tau,\, \readE(x, v)} (B, C, m)
+		} \tag{局部读取规则}
+        \end{equation} 
         \item 声明语义：通过\highlight{执行图}上的公理约束访存操作的序关系
+        \begin{equation}
+            \forall x \in \variables. \domain([\writeE_x \cup \RMW_x \cup \readE_x \cup \RexE_x]; \tpo; [G.P_x]) \subseteq G.P \tag{持久化公理}
+        \end{equation}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{TSO}
-    % MARKER
-\end{frame}
+\againframe{example}
 
-\begin{frame}{操作语义}
-    \begin{definition}[标记变迁系统]
-    	\label{def:lts}
-    	标记变迁系统是一个五元组 $S = (Q, \Sigma, Q_0, T, \Omega)$，其中 $Q$ 是状态集合，$\Sigma$ 是由\emph{标记}构成的有限字母表，$Q_0 \subseteq Q$ 是初始状态集合，$T \subseteq Q \times \Sigma \times Q$ 是带标记的变迁集合，而 $\Omega \subseteq Q \times 2^{\nodeset} \times Q$ 是表示崩溃的变迁集合。
-    \end{definition}
-\end{frame}
+\begin{frame}{操作语义（\S~6.2）}
+    \centering
+    \begin{tikzpicture}[
+        x=1cm, y=1cm, font=\small,
+        processor/.style={draw=tsinghua!85!black, line width=0.75pt},
+        cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
+                    minimum width=1.05cm, minimum height=0.78cm, align=center},
+        buffer/.style={draw=black!55, fill=blue!16,
+                       minimum width=1.9cm, minimum height=0.78cm, align=center},
+        cache/.style={draw=black!55, fill=gray!28,
+                      minimum width=1.5cm, minimum height=0.78cm, align=center},
+        memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
+                       minimum width=2.15cm, minimum height=4cm, align=center},
+        flow/.style={->, line width=0.75pt, black!75},
+        operation/.style={draw=tsinghua!90!black, fill=yellow!55,
+                          inner sep=2pt, font=\scriptsize},
+        failure/.style={draw=deepred, fill=deepred!12,
+                        text=deepred, inner sep=2pt, font=\scriptsize}
+    ]
+        % The coordinate system is shared by all overlays to prevent layout shifts.
+        \only<1->{
+            \draw[processor] (0,3.1) rectangle (6.2,5.05);
+            \node[anchor=north west] at (0.18,5) {处理节点1};
+            \node[cpu] (cpu1) at (1.15,3.88) {CPU};
+            \node[buffer] (buffer1) at (3.1,3.88) {写缓冲区};
+            \node[cache] (cache1) at (5.25,3.88) {缓存};
+        }
+        \only<1->{
+            \draw[processor] (0,0.45) rectangle (6.2,2.4);
+            \node[anchor=south west] at (0.18,0.5) {处理节点2};
+            \node[cpu] (cpu2) at (1.15,1.57) {CPU};
+            \node[buffer] (buffer2) at (3.1,1.57) {写缓冲区};
+            \node[cache] (cache2) at (5.25,1.57) {缓存};
+        }
+        \only<1->{
+            \node[memory] (mem) at (9.0,2.72) {};
+            \node[align=center] at ([yshift=0.43cm]mem.center) {内存节点 \\ （主存）};
+        }
+        \only<1->{
+            \draw[flow] (cpu1.east) -- (buffer1.west);
+            \draw[flow] (buffer1.east) -- (cache1.west);
+            \draw[flow] (cpu2.east) -- (buffer2.west);
+            \draw[flow] (buffer2.east) -- (cache2.west);
+            \draw[flow] (cache1.east) -- (mem.west |- cache1.east);
+            \draw[flow] (cache2.east) -- (mem.west |- cache2.east);
+            \draw[flow] ([xshift=-0.3cm]cache1.south) -- ([xshift=-0.3cm]cache2.north);
+            \draw[flow] ([xshift=0.3cm]cache2.north) -- ([xshift=0.3cm]cache1.south);
+        }
+        \only<1-13>{
+            \node[fill=tsinghua!12, inner sep=2pt] at ([yshift=-0.43cm]mem.center) {$x \mapsto 0$};
+        }
+        \only<1>{
+            \node[operation] at (cpu1.center) {$x \assigns 1$};
+        }
+        \only<2>{
+            \node[operation] at (buffer1.center) {$x \assigns 1$};
+        }
+        \only<3-4>{
+            \node[operation] at (cache1.center) {$x \assigns 1$};
+        }
+        \only<4>{
+        }
+        \only<4-7>{
+            \node[operation] at (cache2.center) {$x \assigns 1$};
+        }
+        \only<4>{
+            \node[operation] at (cpu2.center) {$a \assigns x$};
+        }
+        \only<4->{
+            \node[operation] at (11.05,3.45) {$a = 1$};
+        }
+        \only<5>{
+            \node[failure, minimum width=1cm] at (4.9,4.75) {$\lightning$};
+        }
+        \only<6>{
+            \node[operation] at (cpu1.center) {$x \assigns 1$};
+        }
+        \only<7>{
+            \node[operation] at (buffer1.center) {$x \assigns 1$};
+        }
+        \only<8>{
+            \node[operation] at (cache1.center) {$x \assigns 1$};
+            \node[failure] at (cache2.center) {缓存失效};
+        }
+        \only<9>{
+            \node[failure, minimum width=1cm] at (4.9,4.75) {$\lightning$};
+        }
+        \only<10-11>{
+            \node[operation] at (cpu1.center) {$x \assigns 1$};
+        }
+        \only<11>{
+            \node[operation] at (cpu2.center) {$b \assigns x$};
+            \node[operation] at (cache2.center) {$x \mapsto 0$};
+        }
+        \only<11->{
+            \node[operation] at (11.05,2.55) {$b = 0$};
+        }
+        \only<12>{
+            \node[operation] at (buffer1.center) {$x \assigns 1$};
+        }
+        \only<13>{
+            \node[operation] at (cache1.center) {$x \assigns 1$};
+        }
+        \only<14>{
+            \node[fill=tsinghua!12, inner sep=2pt] at ([yshift=-0.43cm]mem.center) {$x \mapsto 1$};
+        }
+    \end{tikzpicture}
 
-
-\begin{frame}{Why Beamer}
+    \vspace{0.35em}
     \begin{itemize}
-        \item \LaTeX 广泛用于学术界，期刊会议论文模板
+        \item<4-> 缓存一致性使处理节点2能读到 $x = 1$
+        \item<5-> 处理节点崩溃导致写缓冲区和缓存数据丢失、线程从头恢复执行
+        \item<8-> 写入使缓存行失效
     \end{itemize}
-    \begin{table}[h]
-        \centering
-        \begin{tabular}{c|c}
-            Microsoft\textsuperscript{\textregistered}  Word & \LaTeX \\
-            \hline
-            文字处理工具 & 专业排版软件 \\
-            容易上手，简单直观 & 容易上手 \\
-            所见即所得 & 所见即所想，所想即所得 \\
-            高级功能不易掌握 & 进阶难，但一般用不到 \\
-            处理长文档需要丰富经验 & 和短文档处理基本无异 \\
-            花费大量时间调格式 & 无需担心格式，专心作者内容 \\
-            公式排版差强人意 & 尤其擅长公式排版 \\
-            二进制格式，兼容性差 & 文本文件，易读、稳定 \\
-            付费商业许可 & 自由免费使用 \\
-        \end{tabular}
-    \end{table}
+\end{frame}
+
+% \begin{frame}{操作语义}
+%     \begin{definition}[标记变迁系统]
+%     	\label{def:lts}
+%     	标记变迁系统是一个五元组 $S = (Q, \Sigma, Q_0, T, \Omega)$，其中 $Q$ 是状态集合，$\Sigma$ 是由\emph{标记}构成的有限字母表，$Q_0 \subseteq Q$ 是初始状态集合，$T \subseteq Q \times \Sigma \times Q$ 是带标记的变迁集合，而 $\Omega \subseteq Q \times 2^{\nodeset} \times Q$ 是表示崩溃的变迁集合。
+%     \end{definition}
+% \end{frame}
+
+\begin{frame}{声明语义（\S~6.4）}
+    \begin{definition}[执行图]
+	\label{def:execution-graph}
+	执行图 $G \in \egraph$ 是一个五元组 $(E, V, P, \rf, \mo)$，其中：
+	\begin{itemize}
+		\item $E \subseteq \eventset$ 是一个有限事件集合。
+		\item $V$ 是\emph{可见}事件集合，满足 $E \cap (\initset \cup \readE \cup \RMW \cup \RexE \cup \fenceE) \subseteq V \subseteq E$。
+		\item $P$ 是已经\emph{持久化}的事件集合，满足 $E \cap \initset_\bot \subseteq P \subseteq V \cap (\writeE \cup \RMW \cup \readE \cup \RexE)$。
+		\item $\rf$ 是 $E$ 上的一个读取顺序。
+		\item $\mo$ 是 $E$ 上的一个修改顺序。
+	\end{itemize}
+    \end{definition}
+
+    执行图与崩溃的交错序列构成\highlight{执行链}。
+    
+    \begin{itemize}
+        \item 执行链中的每一张图表示一次无崩溃执行。
+        \item 相邻的执行图的事件集并不独立，取决于崩溃的范围。
+    \end{itemize} 
+\end{frame}
+
+\begin{frame}{声明语义（\S~6.4）}
+	\begin{figure}[ht]
+		\begin{subfigure}[t]{0.4\textwidth}
+			\centering
+			\begin{tikzpicture}[executiongraph]
+				\node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
+				\node[visible] (W_x1) [below left=1.2cm and 0.2cm of W_x0] {$\writeE(x, 1)$};
+				\node[visible] (R_x1) [below right=1.2cm and 0.2cm of W_x0] {$\readE(x, 1)$};
+
+				\node[failed, fit=(W_x1), label={left:$\lightning$}] (failed_n1) {};
+
+				\draw[solidarrow] (W_x0) -- (W_x1);
+				\draw[moarrow, bend right=30] (W_x0) to node [left] {\mo} (W_x1);
+				\draw[solidarrow] (W_x0) -- (R_x1);
+				\draw[rfarrow] (W_x1) to node[above] {\rf} (R_x1);
+				% \draw[tpo, bend right=30] (W_x1) to node [below] {\mo} (R_x1);
+			\end{tikzpicture}
+			\caption{执行图1：第一次崩溃前}
+			\label{fig:graph-dsm-example-a-era-1}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.4\textwidth}
+			\centering
+			\begin{tikzpicture}[executiongraph]
+				\node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
+				\node[visible, label={left:$\eta_2$}] (W_x1) [below=0.7cm of W_x0] {$\writeE(x, 1)$};
+				\node[visible] (W_x1_again) [below=0.7cm of W_x1] {$\writeE(x, 1)$};
+
+				\node[failed, fit=(W_x1_again), label={left:$\lightning$}] (failed_n1) {};
+
+				\draw[solidarrow] (W_x0) -- (W_x1);
+				\draw[moarrow, bend left=30] (W_x0) to node [right] {\mo} (W_x1);
+				\draw[solidarrow] (W_x1) -- (W_x1_again);
+				\draw[moarrow, bend left=30] (W_x1) to node [right] {\mo} (W_x1_again);
+			\end{tikzpicture}
+			\caption{执行图2: 第二次崩溃前}
+			\label{fig:graph-dsm-example-a-era-2}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.4\textwidth}
+			\centering
+			\begin{tikzpicture}[executiongraph]
+				\node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
+				\node[visible] (R_x0) [below= of W_x0] {$\readE(x, 0)$};
+
+				\draw[solidarrow] (W_x0) -- (R_x0);
+				\draw[rfarrow, bend left=30] (W_x0) to node [right] {\rf} (R_x0);
+				% \draw[tpoarrow, bend right=30] (W_x0) to node [left] {\tpo} (R_x0);
+			\end{tikzpicture}
+			\caption{执行图3: 第二次崩溃后}
+			\label{fig:graph-dsm-example-a-era-3}
+		\end{subfigure}
+		% \caption{Execution graphs corresponding to the litmus test in图~\ref{fig:dsm-example-a}. Suppose $\eta_1$ and $\eta_2$ are the processing nodes of the two threads. The \highlight{\text{highlight}} indicates that an event has persisted, i.e. it is in $G.P$. The solid edges indicate program orders. Events enclosed by $\lightning$ belong to a failed node. All events in this example are visible.}
+		% \caption*{设 $\eta_1$ 和 $\eta_2$ 分别为两个线程所在的处理节点。图中 \highlight{\text{高亮}} 表示该事件已经持久化，即它属于 $G.P$。实线边表示程序顺序。被 $\lightning$ 包围的事件属于发生崩溃的节点。本例中的所有事件都是可见的。}
+		% \caption{与图~\ref{fig:dsm-example-a} 中示例程序相对应的执行图}
+		\label{fig:graph-dsm-example-a}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{公理}
+    
+    执行链中的每一张执行图都应当满足下述公理
+
+    \vfill
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.7\linewidth}r}
+      \hline
+      $\tpo$ 在 $G.E \setminus \readE$ 上是全序 & {\textsc{(tso-total)}} \\
+      \hline
+      $G.\mo \subseteq \tpo$ & {\textsc{(tso-mo)}} \\
+      \hline
+      $G.\rf \subseteq \tpo \cup G.\po$ & {\textsc{(tso-rf)}} \\
+      \hline
+      $G.\po \setminus ((\writeE \cup \flushE) \times \readE) \subseteq \tpo$ & {\textsc{(tso-po)}} \\
+      \hline
+      $G.\fr(\tpo) \subseteq \tpo$ & {\textsc{(tso-fr)}} \\
+      \hline
+      $G.\fr(\tpo) ; G.\po$ 是非自反的 & {\textsc{(tso-coh)}} \\
+      \hline
+      $\domain(\tpo ; [G.V]) \subseteq G.V$ & {\textsc{(dsm-visible)}} \\
+      \hline
+      $\forall x \in \variables$. $\domain([\writeE_x \cup \RMW_x \cup \readE_x \cup \RexE_x]; \tpo; [G.P_x]) \subseteq G.P$ & {\textsc{(dsm-persist)}} \\
+      \hline
+      $\forall x \in \variables$. $\domain([\writeE_x \cup \RMW_x \cup \readE_x \cup \RexE_x]; \tpo ; [G.V \cap \flushE_x]) \subseteq G.P$ & {\textsc{(dsm-flush)}} \\
+      \hline
+    \end{tabular}
+\end{frame}
+
+\begin{frame}{对比}
+    \begin{itemize}
+        \item 操作语义易于理解，适合作为程序逻辑的基础
+        \begin{itemize}
+            \item 基于不变式综合的验证方法（\S~5）
+        \end{itemize}
+        \item 声明语义更加简洁，适合自动化的验证
+        \begin{itemize}
+            \item 基于鲁棒性检查的验证方法（\S~4）
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{排版举例}

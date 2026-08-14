@@ -1,4 +1,6 @@
+
 \newcommand{\highlight}[1]{{\color{tsinghua}#1}}
+\definecolor{hlcolor}{RGB}{240, 224, 240} % light purple
 
 % Other Functions & Operators
 \newcommand{\obs}{\ensuremath\mathit{obs}\xspace}
@@ -32,7 +34,44 @@
 \newcommand{\cache}{\ensuremath{\mathsc{Cache}}\xspace}
 \newcommand{\memory}{\ensuremath{\mathsc{Mem}}\xspace}
 \newcommand{\eventset}{\ensuremath{\mathcal{E}}\xspace}
-\newcommand{\egraph}{\ensuremath\mathsc{EGraph}\xspace}
+\newcommand{\egraph}{\ensuremath\textsc{EGraph}\xspace}
+
+% Declarative models
+\newcommand{\DDSM}{\ensuremath{\textup{DDTSO}}\xspace}
+\newcommand{\DDSMNT}{\ensuremath{\mathrm{DDSM}^{\mathrm{NT}}}\xspace}
+
+% Intermediate
+\newcommand{\ODSM}{\ensuremath{\DSM^{\texttt{opdl}}}\xspace}
+
+\newcommand{\instrumented}[1]{\color{Purple}\textit{i}\color{black}#1}
+\newcommand{\iM}{\ensuremath{\instrumented{M}}\xspace}
+\newcommand{\iT}{\ensuremath{\instrumented{t}}\xspace}
+\newcommand{\iDSM}{\ensuremath{\instrumented{\DSM}}\xspace}
+\newcommand{\iPTSO}{\ensuremath{\instrumented{\PTSO}}\xspace}
+
+% event types
+\newcommand{\writeE}{\ensuremath{\mathtt{W}}\xspace}
+\newcommand{\readE}{\ensuremath{\mathtt{R}}\xspace}
+\newcommand{\flushE}{\ensuremath{\mathtt{FL}}\xspace}
+\newcommand{\fenceE}{\ensuremath{\mathtt{F}}\xspace}
+\newcommand{\RMW}{\ensuremath{\mathtt{RMW}}\xspace}
+\newcommand{\RexE}{\ensuremath{\mathtt{R\text{-}ex}}\xspace}
+\newcommand{\REC}{\ensuremath{\mathtt{REC}}\xspace}
+
+% partial orders
+\newcommand{\po}{\ensuremath{\color{olive}\mathtt{po}\color{black}}\xspace}
+\newcommand{\hb}{\ensuremath{\color{violet}\mathtt{hb}\color{black}}\xspace}
+\newcommand{\ppo}{\ensuremath{\color{gray}\mathtt{ppo}\color{black}}\xspace}
+\newcommand{\rf}{\ensuremath{\color{teal}\mathtt{rf}\color{black}}\xspace}
+\newcommand{\rfe}{\ensuremath{\color{teal}\mathtt{rf}\color{black}_{\external}}\xspace}
+\newcommand{\mo}{\ensuremath{\color{orange}\mathtt{mo}\color{black}}\xspace}
+\newcommand{\col}[1]{\ensuremath{\color{orange}\mathtt{co}_{#1}\color{black}}\xspace}
+\newcommand{\fr}{\ensuremath{\color{blue}\mathtt{fr}\color{black}}\xspace}
+\newcommand{\tpo}{\ensuremath{\color{red}\mathtt{tpo}\color{black}}\xspace}
+\newcommand{\rs}{\ensuremath{\color{brown}\mathtt{rs}\color{black}}\xspace}
+\newcommand{\dtpo}{\ensuremath{\color{brown}\mathtt{dtpo}\color{black}}\xspace}
+\newcommand{\nvo}{\ensuremath{\color{Sepia}\mathtt{nvo}\color{black}}\xspace}
+\newcommand{\rrf}{\ensuremath{\color{cyan}\mathtt{rrf}\color{black}}\xspace}
 
 % 定义并发程序环境: concurrentcode
 \newenvironment{concurrentcode}
