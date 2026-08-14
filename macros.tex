@@ -12,3 +12,51 @@
 \newcommand{\volatile}{\ensuremath\mathtt{volatile}\xspace}
 \newcommand{\traces}{\ensuremath\mathcal{T}\xspace}
 \newcommand{\tp}{\ensuremath\mathit{tp}\xspace}            
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+% Types & Sets
+\newcommand{\threadset}{\ensuremath{\mathcal{T}}\xspace}
+\newcommand{\nodeset}{\ensuremath{\mathcal{N}}\xspace}
+\newcommand{\pnodeset}{\ensuremath{\mathcal{N}_P}\xspace}
+\newcommand{\mnodeset}{\ensuremath{\mathcal{N}_M}\xspace}
+\newcommand{\initset}{\ensuremath{\mathtt{I}}\xspace}
+\newcommand{\labelset}{\ensuremath\operatorname{Lab}\xspace}
+\newcommand{\plabel}{\ensuremath{\operatorname{PLab}}\xspace}
+\newcommand{\variables}{\ensuremath{\mathcal{L}}\xspace}
+\newcommand{\values}{\ensuremath{\mathcal{V}}\xspace}
+\newcommand{\registers}{\ensuremath{\mathcal{R}}\xspace}
+\newcommand{\sbuffer}{\ensuremath{\mathsc{SBuffer}}\xspace}
+\newcommand{\pbuffer}{\ensuremath{\mathsc{PBuffer}}\xspace}
+\newcommand{\cache}{\ensuremath{\mathsc{Cache}}\xspace}
+\newcommand{\memory}{\ensuremath{\mathsc{Mem}}\xspace}
+\newcommand{\eventset}{\ensuremath{\mathcal{E}}\xspace}
+\newcommand{\egraph}{\ensuremath\mathsc{EGraph}\xspace}
+
+% 定义并发程序环境: concurrentcode
+\newenvironment{concurrentcode}
+{
+    \begin{center}
+    \renewcommand{\arraystretch}{1.1} % 稍微拉开行间距
+    \ttfamily                         % 全局切换为等宽字体
+    \begin{tabular}{>{\raggedright\arraybackslash}l || >{\raggedright\arraybackslash}l}
+}
+{
+    \end{tabular}
+    \end{center}
+}
+
+\newcommand{\expected}[1]{\color{Purple}#1\color{black}}
+
+\newenvironment{concurrentcode3}
+{
+    \begin{center}
+    \renewcommand{\arraystretch}{1.1} 
+    \ttfamily                         
+    \begin{tabular}{>{\raggedright\arraybackslash}l || >{\raggedright\arraybackslash}l || >{\raggedright\arraybackslash}l}
+}
+{
+    \end{tabular}
+    \end{center}
+}

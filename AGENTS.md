@@ -1,1 +1,2 @@
 - I may put a specific marker "MARKER" in the tex file, to indicate where to make modifications.
+- Always re-read the file when I mention MARKER

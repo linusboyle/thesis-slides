@@ -2,12 +2,7 @@
 \usepackage{ctex, hyperref}
 \usepackage[T1]{fontenc}
 
-% other packages
-\usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra, mathtools}
-\usepackage{graphicx,pstricks,listings,stackengine}
-\usepackage{xspace}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta}
+\input{packages.tex}
 
 \author{韩志磊}
 \title{并发系统的崩溃语义及其形式化验证技术}
@@ -113,9 +108,7 @@
     \small
     \renewcommand{\arraystretch}{1.2}
     \begin{tabular}{ccc}
-    	\toprule
     	传统多线程并发程序 & 非易失性内存系统 & 分离式共享内存系统 \\
-    	\midrule
     	\includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps}
     	    & \includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps}
     	    & \includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps} \\
@@ -123,11 +116,18 @@
     	DRAM      & NVMM     & DSM       \\
     	---       & 2019（傲腾） & 2023（CXL） \\
     	无崩溃模型     & 完全崩溃模型   & 部分崩溃模型    \\
-    	\bottomrule
     \end{tabular}
 \end{frame}
 
+\begin{frame}{研究思路}
+    \centering
+    \includegraphics[width=0.9\linewidth]{pic/methodology.pdf}
+\end{frame}
+
+\section{崩溃语义}
+
 \begin{frame}{示例}
+    \centering
     \begin{columns}
         \begin{column}{0.4\textwidth}
             \includegraphics[width=\linewidth]{pic/nvm-intro-exp.pdf}
@@ -142,28 +142,74 @@
             \end{itemize}
         \end{column}
     \end{columns}
+    
+    \vfill
+    如何刻画上述程序行为？
 \end{frame}
 
-\section{崩溃语义}
+\begin{frame}{示例2}
+	\begin{concurrentcode}
+		x \assigns 1; & a \assigns x; \expected{// 1}               \\
+		& b \assigns x; \expected{// 0}                  \\
+	\end{concurrentcode}
+
+    \begin{itemize}
+        \item x86/TSO: 不合法
+        \item NVMM: 不合法
+        \item DSM: 合法
+    \end{itemize}
+
+    \vfill
+    \centering
+    如何刻画上述程序行为？
+\end{frame}
 
 \begin{frame}{内存层级}
-    % MARKER
+    \centering
+    NVMM 可被视为 DSM 在单机上的特例
+
     \begin{columns}
-        \begin{column}{0.3\textwidth}
-            NVMM
+        \begin{column}{0.34\textwidth}
             \begin{figure}
                 \includegraphics[width=\linewidth]{pic/nvmm-hierarchy.pdf}
             \end{figure}
         \end{column}
 
-        \begin{column}{0.6\textwidth}
-            DSM
+        \begin{column}{0.65\textwidth}
             \begin{figure}
                 \includegraphics[width=\linewidth]{pic/cxl.pdf}
             \end{figure}
         \end{column}
     \end{columns}
+
+    \begin{itemize}
+        \item 节点：崩溃的最小单元
+        \begin{itemize}
+            \item 处理节点：代表一台机器，运行若干线程
+            \item 内存节点：包含若干共享变量的地址
+        \end{itemize}
+    \end{itemize}
 \end{frame}
+
+\begin{frame}{语义框架}
+    内存模型的刻画方法主要有两种：
+    \begin{itemize}
+        \item 操作语义：通过\highlight{变迁系统}模拟实际的内存层级行为
+        \item 声明语义：通过\highlight{执行图}上的公理约束访存操作的序关系
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{TSO}
+    % MARKER
+\end{frame}
+
+\begin{frame}{操作语义}
+    \begin{definition}[标记变迁系统]
+    	\label{def:lts}
+    	标记变迁系统是一个五元组 $S = (Q, \Sigma, Q_0, T, \Omega)$，其中 $Q$ 是状态集合，$\Sigma$ 是由\emph{标记}构成的有限字母表，$Q_0 \subseteq Q$ 是初始状态集合，$T \subseteq Q \times \Sigma \times Q$ 是带标记的变迁集合，而 $\Omega \subseteq Q \times 2^{\nodeset} \times Q$ 是表示崩溃的变迁集合。
+    \end{definition}
+\end{frame}
+
 
 \begin{frame}{Why Beamer}
     \begin{itemize}
