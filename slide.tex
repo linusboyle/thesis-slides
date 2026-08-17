@@ -460,6 +460,38 @@
 
 \section{基于鲁棒性检查的验证方法}
 
+\begin{frame}{正确性条件}
+    \highlight{崩溃一致性}：对于可崩溃并发系统$S$的安全属性$\phi$，$\phi$在$S$的任意可达状态上恒成立。
+    \begin{itemize}[<+->]
+        \item \highlight{鲁棒性}是验证程序崩溃一致性的一种充分不必要条件
+        \item 称程序是鲁棒的，当且仅当其任意可达状态均在无崩溃执行下可达
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{鲁棒性}
+    \centering
+    \begin{tikzpicture}[x=1cm,y=1cm]
+        % Nested sets: 可达 $\subset$ 无崩溃可达 $\subset$ 正确.
+        \fill[tsinghua!8] (0,0) ellipse (5.0cm and 2.65cm);
+        \draw[very thick, tsinghua] (0,0) ellipse (5.0cm and 2.65cm);
+        \fill[orange!18] (0,0) ellipse (3.55cm and 1.85cm);
+        \draw[very thick, orange!85!black] (0,0) ellipse (3.55cm and 1.85cm);
+        \fill[teal!22] (0,0) ellipse (2.05cm and 1.05cm);
+        \draw[very thick, teal!75!black] (0,0) ellipse (2.05cm and 1.05cm);
+
+        \node[font=\large\bfseries, text=tsinghua] at (0,2.2) {正确};
+        \node[font=\large\bfseries, text=orange!85!black] at (0,1.4) {无崩溃可达};
+        \node[font=\large\bfseries, text=teal!75!black] at (0,0) {可达};
+        \draw[
+            decorate,
+            decoration={brace, amplitude=8pt},
+            very thick,
+            tsinghua
+        ] (3.55,1.45) -- (3.55,-1.45)
+            node[midway, right=5pt, font=\bfseries, text=tsinghua] {鲁棒性};
+    \end{tikzpicture}
+\end{frame}
+
 \section{基于不变式综合的验证方法}
 
 \begin{frame}{排版举例}
