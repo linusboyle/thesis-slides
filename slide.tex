@@ -194,7 +194,7 @@
 \begin{frame}{语义框架}
     内存模型的刻画方法主要有两种：
     \begin{itemize}
-        \item 操作语义：通过\highlight{变迁系统}模拟实际的内存层级行为
+        \item 操作语义：通过\highlight{标记变迁系统}模拟实际的内存层级行为
         \begin{equation}
         \inferrule{
 			B(\tau) = b \\\\ b = b_1 \cdot \writeE(x, v) \cdot b_2 \\\\
@@ -336,6 +336,14 @@
 % \end{frame}
 
 \begin{frame}{声明语义（\S~6.4）}
+
+    执行图与崩溃的交错序列构成\highlight{执行链}。
+    
+    \begin{itemize}
+        \item 执行链中的每一张图表示一次无崩溃执行。
+        \item 相邻的执行图的事件集并不独立，取决于崩溃的范围。
+    \end{itemize} 
+
     \begin{definition}[执行图]
 	\label{def:execution-graph}
 	执行图 $G \in \egraph$ 是一个五元组 $(E, V, P, \rf, \mo)$，其中：
@@ -347,13 +355,6 @@
 		\item $\mo$ 是 $E$ 上的一个修改顺序。
 	\end{itemize}
     \end{definition}
-
-    执行图与崩溃的交错序列构成\highlight{执行链}。
-    
-    \begin{itemize}
-        \item 执行链中的每一张图表示一次无崩溃执行。
-        \item 相邻的执行图的事件集并不独立，取决于崩溃的范围。
-    \end{itemize} 
 \end{frame}
 
 \begin{frame}{声明语义（\S~6.4）}
@@ -456,6 +457,10 @@
         \end{itemize}
     \end{itemize}
 \end{frame}
+
+\section{基于鲁棒性检查的验证方法}
+
+\section{基于不变式综合的验证方法}
 
 \begin{frame}{排版举例}
     \begin{exampleblock}{无编号公式} % 加 * 
@@ -684,10 +689,6 @@ $V = \frac{4}{3}\pi r^3$
         \caption{这个校徽就是矢量图}
     \end{figure}
 \end{frame}
-
-\section{基于鲁棒性检查的验证方法}
-
-\section{基于不变式综合的验证方法}
 
 \section{总结与展望}
 
