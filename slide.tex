@@ -409,9 +409,6 @@
 			\caption{执行图3: 第二次崩溃后}
 			\label{fig:graph-dsm-example-a-era-3}
 		\end{subfigure}
-		% \caption{Execution graphs corresponding to the litmus test in图~\ref{fig:dsm-example-a}. Suppose $\eta_1$ and $\eta_2$ are the processing nodes of the two threads. The \highlight{\text{highlight}} indicates that an event has persisted, i.e. it is in $G.P$. The solid edges indicate program orders. Events enclosed by $\lightning$ belong to a failed node. All events in this example are visible.}
-		% \caption*{设 $\eta_1$ 和 $\eta_2$ 分别为两个线程所在的处理节点。图中 \highlight{\text{高亮}} 表示该事件已经持久化，即它属于 $G.P$。实线边表示程序顺序。被 $\lightning$ 包围的事件属于发生崩溃的节点。本例中的所有事件都是可见的。}
-		% \caption{与图~\ref{fig:dsm-example-a} 中示例程序相对应的执行图}
 		\label{fig:graph-dsm-example-a}
 	\end{figure}
 \end{frame}
@@ -490,6 +487,11 @@
         ] (3.55,1.45) -- (3.55,-1.45)
             node[midway, right=5pt, font=\bfseries, text=tsinghua] {鲁棒性};
     \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{核心问题}
+    
+
 \end{frame}
 
 \section{基于不变式综合的验证方法}
