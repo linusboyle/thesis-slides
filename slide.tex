@@ -609,6 +609,86 @@
 
 \section{基于不变式综合的验证方法}
 
+\begin{frame}{正确性条件}
+    \highlight{崩溃一致性}：对于可崩溃并发系统$S$的安全属性$\phi$，$\phi$在$S$的任意可达状态上恒成立。
+    \begin{itemize}
+        \item 类似于传统形式化验证中的安全属性检查
+        \item 该类方法通常基于程序逻辑与不变式生成
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{程序逻辑}
+	\begin{itemize}
+		\item 串行程序：霍尔逻辑 $\{P\}~c~\{Q\}$
+		\item 多线程并发程序：Owicki-Gries 推理$R, G \vdash \{P\}~c~\{Q\}$
+		      \[
+			      \inferrule{
+				      R_1, G_1 \text{ 与 }~R_2, G_2 \text{ 不相干 } \\\\
+				      R_1, G_1 \vdash \{P_1\}~c_1~\{Q_1\} \\\\
+				      R_2, G_2 \vdash \{P_2\}~c_2~\{Q_2\}
+			      }{
+				      \{Q\} \cup R_1 \cup R_2, G_1 \cup G_2 \vdash \{P_1 \land P_2\}~c_1~\parallel~c_2~\{Q\}
+			      }
+		      \]
+        \item 带崩溃的并发程序：？
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{模拟}
+    程序逻辑无法直接对崩溃后的状态进行推理，故需引入\highlight{辅助变量}进行模拟。
+    \vfill
+    \begin{block}{辅助变量}
+        \begin{enumerate}
+            \item 对每个共享变量 $x \in \variables$，引入一个新的共享变量 $x'$，即其\highlight{副本}
+            \item 程序状态同时为所有共享变量及其副本赋值
+            \item $x'$的值无法直接操作，但是任意变量$x$ 都可以不确定地将值更新到$x'$
+            \item $x$代表变量当前的缓存值，$x'$代表变量在主存中的实际值。崩溃后，从NVMM恢复的值是$x'$。
+        \end{enumerate}
+    \end{block}
+    \vfill
+    可以证明引入辅助变量后的内存模型和原始的模型语义等价。
+\end{frame}
+
+\begin{frame}{一种面向NVMM的程序逻辑（\S~5.3）}
+
+    在Owicki-Gries推理的基础上可以得到面向 NVMM 的程序逻辑
+
+    \[
+    	\inferrule{
+    		R_1, G_1 \text{ 与 }~R_2, G_2 \text{ 不相干 } \\\\
+    		R_1, G_1 \vdash \{P_1\}~c_1~\{Q_1\} \\\\
+    		R_2, G_2 \vdash \{P_2\}~c_2~\{Q_2\}
+    	}{
+    		\{Q\} \cup R_1 \cup R_2, G_1 \cup G_2 \vdash \{P_1 \land P_2\}~c_1~\parallel~c_2~\{Q\}
+    	}
+    \]
+
+    \begin{definition}[不相干性]
+    	$R_1, G_1$ 与 $R_2, G_2$ 不相干，当且仅当
+    
+    	\begin{enumerate}
+    		\item $\forall (x, e, \mathbb{G}) \in G_1, \forall R \in R_2, R\land \mathbb{G}\rightarrow R[e/x]$
+    		\item $\forall (x, e, \mathbb{G}) \in G_2, \forall R \in R_1, R\land \mathbb{G}\rightarrow R[e/x]$
+    	\end{enumerate}
+    	\label{def:non-interference}
+    \end{definition}
+\end{frame}
+
+\begin{frame}{稳定性}
+	证明树中的所有公式还应满足\highlight{稳定性}。稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定写回副本的过程。
+
+	\vfill
+	\begin{definition}[稳定性]
+		若定义在 $\variables \cup \variables' \cup \registers$ 上的一阶逻辑公式 $\phi$ 满足
+		\[
+			\forall x \in \variables, \phi \rightarrow \phi[x/x']
+		\]
+		则称 $\phi$ 是\emph{稳定的}。
+		\label{def:stability}
+	\end{definition}
+
+\end{frame}
+
 \begin{frame}{排版举例}
     \begin{exampleblock}{无编号公式} % 加 * 
         \begin{equation*}
