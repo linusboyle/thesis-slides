@@ -489,9 +489,122 @@
     \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{核心问题}
-    
+\begin{frame}{总体思路}
+    检查鲁棒性要求遍历程序状态，并依次检查其可达性。例如，对于程序$a \assigns 1 \parallel b \assigns 1$
 
+    \vfill
+    \centering
+    \begin{tabular}{ccc}
+    \toprule
+      程序状态 & 是否可达 & 是否无崩溃可达 \\ 
+    \midrule
+     $(a \mapsto 0, b \mapsto 0)$ & \checkmark  & \checkmark \\ 
+     $(a \mapsto 0, b \mapsto 1)$ & \checkmark  & \checkmark \\ 
+     $(a \mapsto 1, b \mapsto 0)$ & \checkmark  & \checkmark \\ 
+     $(a \mapsto 1, b \mapsto 1)$ & \checkmark  & \checkmark \\ 
+    \bottomrule
+    \end{tabular}
+
+	\begin{block}{核心问题}
+		\begin{center}
+            给定状态$s$，如何检查$s$是否可达？
+		\end{center}
+	\end{block}
+
+\end{frame}
+
+\begin{frame}{恢复观测线程}
+    由数学归纳法，只需检查给定状态是否在一次崩溃后可达。
+    
+    恢复观测线程可用于将状态嵌入到崩溃前的执行图中。
+
+    \begin{columns}
+    	\begin{column}{0.4\textwidth}
+    		\begin{concurrentcode}
+    			x \assigns 1; & y \assigns 2;  \\
+    			\FLUSH x;     & \FLUSH y;       \\
+    			a \assigns y; & b \assigns x;  \\
+    			x \assigns a; & y \assigns b;  \\
+    		\end{concurrentcode}
+    	\end{column}
+    
+    	\begin{column}{0.5\textwidth}
+    		\begin{figure}
+    			\includegraphics[width=\linewidth]{pic/reduction-exp.pdf}
+    		\end{figure}
+    	\end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{DTPO约束}
+    使用恢复观测线程得到的执行图需额外满足一定条件。为此定义关于刷新指令的DTPO约束：
+    \[
+    G.\dtpo \triangleq \bigcup_{x \in \variables} \flushE_x \times \left\{ w \in \writeE_x \mid \exists w' \in \domain(G.\rrf), (w', w) \in G.\mo  \right\}
+    \]
+    \[
+    G.\dtpo; \tpo~\text{是非自反的}
+    \]
+
+    \begin{block}{直观}
+        刷新指令的效果是缓存中的值立刻写回主存。因此，假设恢复观测线程读到$w'$，则$w'$后发生的写事件$w$都一定发生在刷新指令之后，否则与恢复后观测到$w'$的事实矛盾。
+    \end{block}
+\end{frame}
+
+\begin{frame}{可达性检查}
+    \begin{block}{核心问题}
+		\begin{center}
+            给定状态$s$，如何检查$s$是否可达？
+		\end{center}
+	\end{block}
+
+    \begin{itemize}
+        \item 为程序插桩，引入恢复观测线程
+        \item 得到插桩后的执行图
+        \item 检查执行图是否满足公理以及DTPO约束
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{状态遍历}
+    将约束编码为 SMT 公式，借助 DPLL 算法可高效遍历状态空间。
+
+\begin{columns}
+	\begin{column}{0.5\textwidth}
+		\begin{align}
+			\rho & = x_0 = 0 \land y_0 = 0 \tag{初始值}                   \\
+			     & \land x_1 = 1 \land a = y_1 \land x_2 = a \tag{线程1}  \\
+			     & \land y_2 = 2 \land b = x_3 \land y_3 = b \tag{线程2} \\
+			     & \land r_1 = x_4 \land r_2 = y_4 \tag{恢复观测线程}
+		\end{align}
+	\end{column}
+
+	\begin{column}{0.5\textwidth}
+		\begin{concurrentcode3}
+			x \assigns 1; & y \assigns 2; & r1 \assigns x; \\
+			\FLUSH x;     & \FLUSH y;     & r2 \assigns y; \\
+			a \assigns y; & b \assigns x; & \\
+			x \assigns a; & y \assigns b; & \\
+		\end{concurrentcode3}
+	\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{实现与评估}
+    针对 NVMM 程序的算法实现于原型工具 \pmverify 中。在PMDK \texttt{libpmemobj} 测试集上与动态工具 \psan 进行对比。
+    
+    \vfill
+    \centering
+	\begin{tabular}{llll}
+		\toprule
+		      & \pmverify{} & \psan{} & \psan{}* \\
+		\midrule
+		鲁棒    & 1           & 0       & 0        \\
+		非鲁棒   & 12          & 6       & 0        \\
+		未知    & 13          & 20      & 26       \\
+		惟一求解数 & 7           & 0       & 0        \\
+		平均时间  & 2768.42s    & 16.7s   & 5.7s     \\
+		标准差   & 1045.26s    & 9.98s   & 2.8s     \\
+		\bottomrule
+	\end{tabular}
 \end{frame}
 
 \section{基于不变式综合的验证方法}
