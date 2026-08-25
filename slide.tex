@@ -70,9 +70,9 @@
             }
         }
 
-        \only<1->{\node[above=0.6cm] at (1.4,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
-        \only<2->{\node[above=0.6cm] at (5.6,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
-        \only<3->{\node[above=0.6cm] at (9.8,0) {\includegraphics[width=1.7cm]{pic/Tsinghua_University_Logo.eps}};}
+        \only<1->{\node[above=0.6cm] at (1.4,0) {\includegraphics[width=1.7cm]{pic/Burks-ENIAC-historic-scaled.jpg}};}
+        \only<2->{\node[above=0.6cm] at (5.6,0) {\includegraphics[height=1.7cm]{pic/nvmm-hierarchy.pdf}};}
+        \only<3->{\node[above=0.6cm] at (9.8,0) {\includegraphics[height=1.7cm]{pic/armv8-memory-view-branded.png-700x621.png}};}
 
         \only<1->{\node[below=0.35cm] at (1.4,0) {串行};}
         \only<2->{\node[below=0.35cm] at (5.6,0) {顺序一致性};}
@@ -109,9 +109,9 @@
     \renewcommand{\arraystretch}{1.2}
     \begin{tabular}{ccc}
     	传统多线程并发程序 & 非易失性内存系统 & 分离式共享内存系统 \\
-    	\includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps}
-    	    & \includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps}
-    	    & \includegraphics[width=0.14\textwidth]{pic/Tsinghua_University_Logo.eps} \\
+    	\includegraphics[height=0.14\textwidth]{pic/dimm.png}
+    	    & \includegraphics[height=0.14\textwidth]{pic/optane.png}
+    	    & \includegraphics[height=0.14\textwidth]{pic/cxl.png} \\
     	单机        & 单机       & 分布式       \\
     	DRAM      & NVMM     & DSM       \\
     	---       & 2019（傲腾） & 2023（CXL） \\
