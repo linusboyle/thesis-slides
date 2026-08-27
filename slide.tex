@@ -249,6 +249,93 @@
 	\end{columns}
 \end{frame}
 
+\begin{frame}{操作语义}
+    \centering
+    \begin{tikzpicture}[
+        x=0.92cm, y=1cm, font=\small,
+        cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
+                    minimum width=1.15cm, minimum height=0.78cm, align=center},
+        buffer/.style={draw=black!55, fill=blue!16,
+                       minimum width=2cm, minimum height=0.78cm, align=center},
+        cache/.style={draw=black!55, fill=gray!28,
+                      minimum width=1.65cm, minimum height=0.78cm, align=center},
+        memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
+                       minimum width=2.35cm, minimum height=2.75cm, align=center},
+        flow/.style={->, line width=0.75pt, black!75},
+        operation/.style={draw=tsinghua!90!black, fill=yellow!55,
+                          inner sep=2pt, font=\scriptsize},
+        persisted/.style={draw=tsinghua!90!black, fill=tsinghua!18,
+                          inner sep=2pt, font=\scriptsize},
+        failure/.style={draw=deepred, fill=deepred!12,
+                        text=deepred, inner sep=2pt, font=\scriptsize}
+    ]
+        % Keep the same bounding box on every overlay.
+        \path[use as bounding box] (-0.2,0.45) rectangle (11.35,5.2);
+
+        \only<1->{
+            \node[cpu] (cpu) at (1.18,3.42) {CPU};
+            \node[buffer] (buffer) at (3.2,3.42) {写缓冲区};
+            \node[cache] (cache) at (5.42,3.42) {缓存};
+
+            \node[memory] (mem) at (9.05,3.42) {};
+            \node[align=center] at ([yshift=0.75cm]mem.center) {非易失性主存};
+
+            \draw[flow] (cpu.east) -- (buffer.west);
+            \draw[flow] (buffer.east) -- (cache.west);
+            \draw[flow] (cache.east) -- (mem.west);
+        }
+
+        \only<1-6>{
+            \node[fill=tsinghua!12, inner sep=2pt] at ([yshift=0.05cm]mem.center) {$a \mapsto 0$};
+            \node[fill=tsinghua!12, inner sep=2pt] at ([yshift=-0.45cm]mem.center) {$b \mapsto 0$};
+        }
+        \only<7>{
+            \node[fill=tsinghua!12, inner sep=2pt] at ([yshift=0.05cm]mem.center) {$a \mapsto 0$};
+            \node[persisted] at ([yshift=-0.45cm]mem.center) {$b \mapsto 1$};
+        }
+        \only<8->{
+            \node[fill=tsinghua!12, inner sep=2pt] at ([yshift=0.05cm]mem.center) {$a \mapsto 0$};
+            \node[persisted] at ([yshift=-0.45cm]mem.center) {$b \mapsto 1$};
+        }
+
+        \only<1>{
+            \node[operation] at (cpu.center) {$a \assigns 1$};
+        }
+        \only<2>{
+            \node[operation] at (buffer.center) {$a \assigns 1$};
+        }
+        \only<3-7>{
+            \node[operation] at (cache.center) {$a \assigns 1$};
+        }
+        \only<4>{
+            \node[operation] at (cpu.center) {$b \assigns 1$};
+        }
+        \only<5>{
+            \node[operation] at (buffer.center) {$b \assigns 1$};
+        }
+        \only<6>{
+            \node[operation, yshift=-0.28cm] at (cache.center) {$b \assigns 1$};
+        }
+        \only<7>{
+            \node[persisted] at (10.95,3.65) {$b$ 持久化};
+        }
+        \only<8>{
+            \node[failure, minimum width=1cm] at (5.42,4.02) {$\lightning$};
+            \node[failure] at (10.95,3.05) {崩溃恢复};
+        }
+        \only<9->{
+            \node[persisted, align=center] at (10.78,3.35) {恢复状态\\$a \mapsto 0$\\$b \mapsto 1$};
+        }
+    \end{tikzpicture}
+
+    \vfill
+    \begin{itemize}
+        \item<3-> $a \assigns 1$ 先到达缓存，但尚未写回非易失性主存
+        \item<6-> $b \assigns 1$ 随后到达缓存，并先于 $a \assigns 1$ 写回
+        \item<9-> 崩溃后从主存恢复，观察到 $a \mapsto 0, b \mapsto 1$
+    \end{itemize}
+\end{frame}
+
 \begin{frame}{对比}
     \begin{itemize}
         \item 操作语义易于理解，适合作为程序逻辑的基础
