@@ -336,7 +336,44 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{对比}
+\begin{frame}{声明语义}
+    执行图中的节点是程序的访存操作，有向边则是操作间的序关系
+    \vfill
+    \centering
+    \begin{tikzpicture}[executiongraph]
+        \node[visible] (W_a) {$\writeE(a, 1)$};
+        \node[visible] (W_b) [right=3.2cm of W_a] {$\writeE(b, 1)$};
+
+        \draw[solidarrow] (W_a) -- node[above] {\po} (W_b);
+        \draw[->, dotted, color=Sepia, line width=1pt, shorten >=2pt, shorten <=2pt, bend left=35]
+            (W_b) to node[below] {\nvo} (W_a);
+    \end{tikzpicture}
+
+    \vfill
+    \begin{itemize}
+        \item 程序顺序$\po$刻画了 $a \assigns 1$ 先于 $b \assigns 1$ 执行
+        \item 持久化顺序$\nvo$刻画了 $b \assigns 1$ 先于 $a \assigns 1$ 写回主存
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{公理}
+	执行图中的序关系并非任意，而是必须符合内存模型特定的公理
+	\begin{block}{NVMM 公理}
+
+		存在$G.E \cap (\writeE \cup \RMW)$ 上的全序 $\nvo$，使得
+
+		\begin{enumerate}
+			\item $G.\hb = (G.\ppo \cup G.\rfe \cup G.\mo \cup G.\fr)^+$ 是非自反的
+			\item $G.\fr ; G.\po$ 是非自反的
+			\item $G.V = G.E$
+			\item $G.\mo \subseteq \nvo$
+			\item 如果$(e_1, e_2) \in G.\hb$ 且 $\type(e_1) \in \{\writeE, \RMW\}$, $\type(e_2) = \flushE$, $\location(e_1) = \location(e_2)$，则$e_1 \in G.P$
+			\item $\domain(\nvo; [G.P]) \subseteq G.P$
+		\end{enumerate}
+	\end{block}
+\end{frame}
+
+\begin{frame}{语义建模方式的对比}
     \begin{itemize}
         \item 操作语义易于理解，适合作为程序逻辑的基础
         \begin{itemize}
@@ -351,7 +388,7 @@
 
 \begin{frame}{正确性条件}
 
-    常见的NVMM正确性保障方式是证明其\highlight{崩溃一致性}：
+    无论采取何种语义和验证方式，NVMM正确性保障的目标相同，即证明其\highlight{崩溃一致性}：
     \vfill
     \begin{block}{崩溃一致性}
         称运行于NVMM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性主存状态都满足给定的安全属性$\phi$。
@@ -417,8 +454,8 @@
 
 \begin{frame}{恢复观测线程}
     由数学归纳法，只需检查给定状态是否在一次崩溃后可达。
-    
-    恢复观测线程可用于将状态嵌入到崩溃前的执行图中。
+    \vfill
+    恢复观测线程是在原本程序之外的一个\highlight{虚拟线程}，包含对所有内存位置的一次读取，其可用于将状态嵌入到崩溃前的执行图中。
 
     \begin{columns}
     	\begin{column}{0.4\textwidth}
@@ -439,7 +476,7 @@
 \end{frame}
 
 \begin{frame}{DTPO约束}
-    使用恢复观测线程得到的执行图需额外满足一定条件。为此定义关于刷新指令的DTPO约束：
+    除已有的NVMM的公理，使用恢复观测线程得到的执行图需额外满足一定条件。为此定义关于刷新指令的DTPO约束：
     \[
     G.\dtpo \triangleq \bigcup_{x \in \variables} \flushE_x \times \left\{ w \in \writeE_x \mid \exists w' \in \domain(G.\rrf), (w', w) \in G.\mo  \right\}
     \]
@@ -516,7 +553,7 @@
 	\begin{itemize}
 		\item 串行程序：霍尔逻辑 $\{P\}~c~\{Q\}$
 		\item 多线程并发程序：Owicki-Gries 推理$R, G \vdash \{P\}~c~\{Q\}$
-		      \[
+        \begin{equation}
 			      \inferrule{
 				      R_1, G_1 \text{ 与 }~R_2, G_2 \text{ 不相干 } \\\\
 				      R_1, G_1 \vdash \{P_1\}~c_1~\{Q_1\} \\\\
@@ -524,67 +561,47 @@
 			      }{
 				      \{Q\} \cup R_1 \cup R_2, G_1 \cup G_2 \vdash \{P_1 \land P_2\}~c_1~\parallel~c_2~\{Q\}
 			      }
-		      \]
-        \item 带崩溃的并发程序：？
+                  \tag{不相干性}
+        \end{equation}
+        \item 运行于NVMM 的并发程序：？
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{模拟}
-    程序逻辑无法直接对崩溃后的状态进行推理，故需引入\highlight{辅助变量}进行模拟。
+\begin{frame}{一种面向NVMM的程序逻辑（\S~5.3）}
+
+    在Owicki-Gries推理的基础上可以得到一种适用于 NVMM 的程序逻辑。
+    \vfill
+    \highlight{主要挑战}：程序逻辑无法直接对崩溃后的状态进行推理。
     \vfill
     \begin{block}{辅助变量}
         \begin{enumerate}
-            \item 对每个共享变量 $x \in \variables$，引入一个新的共享变量 $x'$，即其\highlight{副本}
-            \item 程序状态同时为所有共享变量及其副本赋值
-            \item $x'$的值无法直接操作，但是任意变量$x$ 都可以不确定地将值更新到$x'$
-            \item $x$代表变量当前的缓存值，$x'$代表变量在主存中的实际值。崩溃后，从NVMM恢复的值是$x'$。
+            \item 对每个共享变量 $x$，引入一个新的共享变量 $x'$
+            \item $x$代表变量当前在缓存中的值，$x'$则代表变量在主存中的实际值。
+            \item 崩溃后，从NVMM恢复的值是$x'$。
         \end{enumerate}
     \end{block}
     \vfill
     可以证明引入辅助变量后的内存模型和原始的模型语义等价。
 \end{frame}
 
-\begin{frame}{一种面向NVMM的程序逻辑（\S~5.3）}
-
-    在Owicki-Gries推理的基础上可以得到面向 NVMM 的程序逻辑
-
-    \[
-    	\inferrule{
-    		R_1, G_1 \text{ 与 }~R_2, G_2 \text{ 不相干 } \\\\
-    		R_1, G_1 \vdash \{P_1\}~c_1~\{Q_1\} \\\\
-    		R_2, G_2 \vdash \{P_2\}~c_2~\{Q_2\}
-    	}{
-    		\{Q\} \cup R_1 \cup R_2, G_1 \cup G_2 \vdash \{P_1 \land P_2\}~c_1~\parallel~c_2~\{Q\}
-    	}
-    \]
-
-    \begin{definition}[不相干性]
-    	$R_1, G_1$ 与 $R_2, G_2$ 不相干，当且仅当
-    
-    	\begin{enumerate}
-    		\item $\forall (x, e, \mathbb{G}) \in G_1, \forall R \in R_2, R\land \mathbb{G}\rightarrow R[e/x]$
-    		\item $\forall (x, e, \mathbb{G}) \in G_2, \forall R \in R_1, R\land \mathbb{G}\rightarrow R[e/x]$
-    	\end{enumerate}
-    	\label{def:non-interference}
-    \end{definition}
-\end{frame}
-
 \begin{frame}{稳定性}
-	证明树中的所有公式还应满足\highlight{稳定性}。稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定写回副本的过程。
+	除引入辅助变量，证明中的所有公式还需额外满足\highlight{稳定性}约束。
 
 	\vfill
 	\begin{definition}[稳定性]
 		若定义在 $\variables \cup \variables' \cup \registers$ 上的一阶逻辑公式 $\phi$ 满足
 		\[
-			\forall x \in \variables, \phi \rightarrow \phi[x/x']
+			\forall x \in \variables, \phi \rightarrow \phi[x\backslash x']
 		\]
 		则称 $\phi$ 是\emph{稳定的}。
 		\label{def:stability}
 	\end{definition}
+    \vfill
+    稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定写回副本的过程。
 \end{frame}
 
 \begin{frame}{示例}
-    $\phi \triangleq z = 1 \rightarrow x = 1$
+    目标：证明$\phi \triangleq z = 1 \rightarrow x = 1$在非易失性主存状态上恒成立
 
     \begin{figure}
     \begin{concurrentcode}
@@ -658,9 +675,9 @@
 \begin{frame}{验证方法对比}
     \begin{itemize}[<+->]
         \item 两者都通过某种方式将崩溃消除，只考虑无崩溃执行
-        \item 都需要额外的约束建模崩溃的语义
+        \item 都需要额外的约束建模崩溃的语义：DTPO约束 v.s. 稳定性约束
         \item 鲁棒性验证基于声明语义，而不变式综合基于操作语义
-        \item 声明语义要求访存操作有限，故处理无界循环时有误报
+        % \item 声明语义要求访存操作有限，故处理无界循环时有误报
     \end{itemize}
 \end{frame}
 
@@ -668,7 +685,7 @@
 
 \begin{frame}{内存层级}
     \centering
-    和NVMM不同， DSM 是一个多节点的分布式系统
+    和NVMM不同， DSM 是一种多节点的分布式系统
 
     \begin{figure}
         \includegraphics[width=0.8\linewidth]{pic/cxl.pdf}
@@ -825,27 +842,16 @@
 
 \begin{frame}{声明语义（\S~6.4）}
 
-    执行图与崩溃的交错序列构成\highlight{执行链}。
+    对于DSM而言，声明语义由执行图与崩溃的交错序列构成的\highlight{执行链}刻画。
     
     \begin{itemize}
         \item 执行链中的每一张图表示一次无崩溃执行。
         \item 相邻的执行图的事件集并不独立，取决于崩溃的范围。
     \end{itemize} 
 
-    \begin{definition}[执行图]
-	\label{def:execution-graph}
-	执行图 $G \in \egraph$ 是一个五元组 $(E, V, P, \rf, \mo)$，其中：
-	\begin{itemize}
-		\item $E \subseteq \eventset$ 是一个有限事件集合。
-		\item $V$ 是\emph{可见}事件集合，满足 $E \cap (\initset \cup \readE \cup \RMW \cup \RexE \cup \fenceE) \subseteq V \subseteq E$。
-		\item $P$ 是已经\emph{持久化}的事件集合，满足 $E \cap \initset_\bot \subseteq P \subseteq V \cap (\writeE \cup \RMW \cup \readE \cup \RexE)$。
-		\item $\rf$ 是 $E$ 上的一个读取顺序。
-		\item $\mo$ 是 $E$ 上的一个修改顺序。
-	\end{itemize}
-    \end{definition}
 \end{frame}
 
-\begin{frame}{声明语义（\S~6.4）}
+\begin{frame}{执行链示例}
 	\begin{figure}[ht]
 		\begin{subfigure}[t]{0.4\textwidth}
 			\centering
@@ -930,13 +936,26 @@
     \end{tabular}
 \end{frame}
 
+\begin{frame}{DSM的变体（\S~7）}
+    由于CXL标准目前并不成熟，实际对DSM架构的认识并不完全一致，从而使DSM在若干方面存在变体：
+
+    \begin{itemize}
+        \item 缓存一致性协议
+        \item 写回策略
+        \item 缓存行污染机制
+        \item 非时序性写回指令
+        \item ……
+    \end{itemize}
+    
+    本文也为相应的变体进行了形式化，并证明了其相对于DSM内存模型的强弱关系。
+\end{frame}
 
 \section{总结与展望}
 
 \begin{frame}{本文总结}
-    本课题聚焦带崩溃的新兴并发系统的形式化语义与验证方法，以非易失性内存系统与分离式共享内存系统为例进行讨论。
+    本课题聚焦带崩溃的并发系统及其新型内存模型的形式化语义与验证方法，以非易失性内存系统与分离式共享内存系统为例进行讨论。
     \begin{itemize}
-        \item 崩溃语义：
+        \item 内存模型的形式化语义：
         \begin{itemize}
             \item 语义框架：\S~2
             \item 完全崩溃系统的语义：\S~3
