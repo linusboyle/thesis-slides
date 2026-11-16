@@ -1,3 +1,4 @@
+% !TEX options = -shell-escape
 \documentclass{beamer}
 \usepackage{ctex, hyperref}
 \usepackage[T1]{fontenc}
@@ -85,14 +86,15 @@
 	\end{minipage}
 \end{frame}
 
-\begin{frame}{NVM}
+\begin{frame}{研究对象}
 	\begin{columns}
 		\begin{column}{0.4\textwidth}
 			非易失性内存（NVM）
+            \vspace{2em}
             \begin{enumerate}
-                \item 类似DRAM的随机存储器
-                \item 类似硬盘的非易失介质
-                \item 主要应用于云计算、物联网
+                \item 类似DRAM，可按字节随机存取
+                \item 类似硬盘，断电数据不丢失
+                \item 应用于云计算、物联网等领域
             \end{enumerate}
 		\end{column}
 		\begin{column}{0.6\textwidth}
@@ -134,6 +136,26 @@
 	\end{columns}
 \end{frame}
 
+\begin{frame}{内存层级（单机）}
+
+    在常见的CPU-缓存-主存的内存层级中，NVM可作为主存使用。
+
+    \begin{figure}
+        \includegraphics[width=0.6\linewidth]{pic/nvmm-hierarchy.pdf}
+    \end{figure}
+
+\end{frame}
+
+\begin{frame}{内存层级（分布式）}
+    
+    近年随着互连装置的发展（CXL，CHI，NVLink等），NVM也被扩展到多节点的分布式系统。
+
+    \begin{figure}
+        \includegraphics[width=\linewidth]{pic/cxl.pdf}
+    \end{figure}
+
+\end{frame}
+
 \begin{frame}{内存模型}
     随着计算系统不断发展，程序语义随之变化，从而要求新的语义建模工具。
     % 存与算是计算系统发展的两个维度，也对应着形式化语义模型的发展脉络。形式
@@ -165,23 +187,23 @@
     \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{研究对象}
-    \begin{minipage}[c]{0.55\linewidth}
-        \begin{figure}
-            \centering
-            \includegraphics[width=\linewidth]{pic/memory-wall.png}
-        \end{figure}
-    \end{minipage}
-    \hfill
-    \begin{minipage}[c]{0.4\linewidth}
-        本课题研究近年涌现出的一批新型并发系统及其内存模型，探索其语义建模与验证技术。
-        \vfill
-        \begin{itemize}
-            \item 安全攸关系统的数据安全$\rightarrow$\\ \highlight{非易失性内存系统}
-            \item 内存墙问题$\rightarrow$\\ \highlight{分离式共享内存系统}
-        \end{itemize}
-    \end{minipage}
-\end{frame}
+% \begin{frame}{研究对象}
+%     \begin{minipage}[c]{0.55\linewidth}
+%         \begin{figure}
+%             \centering
+%             \includegraphics[width=\linewidth]{pic/memory-wall.png}
+%         \end{figure}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}[c]{0.4\linewidth}
+%         本课题研究近年涌现出的一批新型并发系统及其内存模型，探索其语义建模与验证技术。
+%         \vfill
+%         \begin{itemize}
+%             \item 安全攸关系统的数据安全$\rightarrow$\\ \highlight{非易失性内存系统}
+%             \item 内存墙问题$\rightarrow$\\ \highlight{分离式共享内存系统}
+%         \end{itemize}
+%     \end{minipage}
+% \end{frame}
 
 \begin{frame}{崩溃}
     这类新型并发系统的特点是\highlight{崩溃}会影响程序执行；而传统的内存模型框架并未考虑崩溃这一维度。
