@@ -1,5 +1,12 @@
 % !TEX options = -shell-escape
+% 快速编译开关（不改文件、只在命令行传入）：
+%   只编译某个帧（帧上要写 [label=xxx]）：
+%     xelatex -jobname=draft "\def\draftframe{xxx}\input{slide.tex}"
+%   去掉全部 overlay（handout 版，页数更少）：
+%     xelatex -jobname=handout "\def\handoutmode{}\input{slide.tex}"
+\ifdefined\handoutmode\PassOptionsToClass{handout}{beamer}\fi
 \documentclass{beamer}
+\ifdefined\draftframe\expandafter\includeonlyframes\expandafter{\draftframe}\fi
 \usepackage{ctex, hyperref}
 \usepackage[T1]{fontenc}
 
@@ -154,6 +161,27 @@
         \includegraphics[width=\linewidth]{pic/cxl.pdf}
     \end{figure}
 
+\end{frame}
+
+\begin{frame}{研究目的}
+
+    NVM的特性有别于传统的存储设备，为编程带来新的挑战
+
+    \vspace{1em}
+
+    \begin{itemize}
+        \item NVM具有非易失性
+        \begin{itemize}
+            \item 程序的执行效果能够被保留到系统崩溃后 :)
+            \item 但这也包括程序中已经发生的错误 :(
+        \end{itemize}
+        \item 对内存的写操作是异步生效的
+        \begin{itemize}
+            \item 程序的执行效果可能只保留了一部分……
+            \item ……而且是乱序的!
+        \end{itemize}
+        \item 系统崩溃在不同场景下的作用范围不同
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{内存模型}
