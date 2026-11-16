@@ -1,0 +1,44 @@
+% 「缓冲区」一帧中的 TikZ 图。
+% 由 ../Makefile 编译为 tikz/buffer.pdf，再由 slide.tex 以图片形式引入。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[
+    x=0.92cm, y=1cm, font=\small,
+    cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
+                minimum width=1.15cm, minimum height=0.78cm, align=center},
+    buffer/.style={draw=black!55, fill=blue!16,
+                   minimum width=2cm, minimum height=0.78cm, align=center},
+    cache/.style={draw=black!55, fill=gray!28,
+                  minimum width=1.65cm, minimum height=2.5cm, align=center},
+    memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
+                   minimum width=2.35cm, minimum height=2.75cm, align=center},
+    flow/.style={->, line width=0.75pt, black!75},
+    operation/.style={draw=tsinghua!90!black, fill=yellow!55,
+                      inner sep=2pt, font=\scriptsize},
+    persisted/.style={draw=tsinghua!90!black, fill=tsinghua!18,
+                      inner sep=2pt, font=\scriptsize},
+    failure/.style={draw=deepred, fill=deepred!12,
+                    text=deepred, inner sep=2pt, font=\scriptsize}
+    ]
+    \node at (-0.1,4.3) {线程1};
+    \node at (-0.1,2.55) {线程2};
+    \node[cpu] (cpu1) at (1.18,4.3) {CPU};
+    \node[buffer] (buffer1) at (3.2,4.3) {写缓冲区};
+    \node[cpu] (cpu2) at (1.18,2.55) {CPU};
+    \node[buffer] (buffer2) at (3.2,2.55) {写缓冲区};
+    \node[cache] (cache) at (5.42,3.425) {缓存};
+
+    \node[memory] (mem) at (9.05,3.425) {};
+    \node[align=center] at (mem.center) {非易失性内存};
+
+    \draw[flow] (cpu1.east) -- (buffer1.west);
+    \draw[flow] (cpu2.east) -- (buffer2.west);
+    \draw[flow] (buffer1.east) -- (cache.west |- buffer1.east);
+    \draw[flow] (buffer2.east) -- (cache.west |- buffer2.east);
+    \draw[flow] (cache.east) -- (mem.west);
+\end{tikzpicture}
+\end{document}

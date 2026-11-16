@@ -1,0 +1,21 @@
+% 「执行链示例」中的第二张执行图。
+% 由 ../Makefile 编译为 tikz/exec-chain-2.pdf。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[executiongraph]
+    \node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
+    \node[visible, label={left:$\eta_2$}] (W_x1) [below=0.7cm of W_x0] {$\writeE(x, 1)$};
+    \node[visible] (W_x1_again) [below=0.7cm of W_x1] {$\writeE(x, 1)$};
+
+    \node[failed, fit=(W_x1_again), label={left:$\lightning$}] (failed_n1) {};
+
+    \draw[solidarrow] (W_x0) -- (W_x1);
+    \draw[moarrow, bend left=30] (W_x0) to node [right] {\mo} (W_x1);
+    \draw[solidarrow] (W_x1) -- (W_x1_again);
+    \draw[moarrow, bend left=30] (W_x1) to node [right] {\mo} (W_x1_again);
+\end{tikzpicture}
+\end{document}

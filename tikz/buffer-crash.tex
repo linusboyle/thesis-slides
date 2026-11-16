@@ -1,0 +1,47 @@
+% 「崩溃」一帧中的示意图：崩溃时写缓冲区与缓存中的数据全部丢失。
+% 由 ../Makefile 编译为 tikz/buffer-crash.pdf。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[
+    x=0.92cm, y=1cm, font=\small,
+    cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
+                minimum width=1.15cm, minimum height=0.78cm, align=center},
+    buffer/.style={draw=black!55, fill=blue!16,
+                   minimum width=2cm, minimum height=0.78cm, align=center},
+    cache/.style={draw=black!55, fill=gray!28,
+                  minimum width=1.65cm, minimum height=2.5cm, align=center},
+    memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
+                   minimum width=2.35cm, minimum height=2.75cm, align=center},
+    flow/.style={->, line width=0.75pt, black!75},
+    crash/.style={draw=deepred, line width=1.5pt, opacity=0.75}
+    ]
+    \node at (-0.1,4.3) {线程1};
+    \node at (-0.1,2.55) {线程2};
+    \node[cpu] (cpu1) at (1.18,4.3) {CPU};
+    \node[buffer] (buffer1) at (3.2,4.3) {写缓冲区};
+    \node[cpu] (cpu2) at (1.18,2.55) {CPU};
+    \node[buffer] (buffer2) at (3.2,2.55) {写缓冲区};
+    \node[cache] (cache) at (5.42,3.425) {缓存};
+
+    \node[memory] (mem) at (9.05,3.425) {};
+    \node[align=center] at (mem.center) {非易失性内存};
+
+    \draw[flow] (cpu1.east) -- (buffer1.west);
+    \draw[flow] (cpu2.east) -- (buffer2.west);
+    \draw[flow] (buffer1.east) -- (cache.west |- buffer1.east);
+    \draw[flow] (buffer2.east) -- (cache.west |- buffer2.east);
+    \draw[flow] (cache.east) -- (mem.west);
+
+    % 崩溃后写缓冲区与缓存中的数据丢失。
+    \draw[crash] (buffer1.north west) -- (buffer1.south east);
+    \draw[crash] (buffer1.south west) -- (buffer1.north east);
+    \draw[crash] (buffer2.north west) -- (buffer2.south east);
+    \draw[crash] (buffer2.south west) -- (buffer2.north east);
+    \draw[crash] (cache.north west) -- (cache.south east);
+    \draw[crash] (cache.south west) -- (cache.north east);
+\end{tikzpicture}
+\end{document}

@@ -107,36 +107,8 @@
 		\begin{column}{0.65\textwidth}
 			\begin{figure}
 				\centering
-				\begin{tikzpicture}[
-					x=0.86cm,
-					y=0.58cm,
-					font=\sffamily\scriptsize,
-					line width=0.7pt,
-					>=Latex
-				]
-					% Clip only the pyramid; the scales sit outside this scope.
-					\begin{scope}
-						\clip (0,0) -- (4,7) -- (8,0) -- cycle;
-						\fill[gray!32] (0,2.75) rectangle (8,3.75);
-						\draw (0,0) -- (4,7) -- (8,0) -- cycle;
-						\foreach \y in {0.95, 2.05, 2.75, 3.75, 4.85, 5.65} {
-							\draw (4*\y/7,\y) -- ({8-4*\y/7},\y);
-						}
-					\end{scope}
-					\node[align=center] at (4,6.2) {\tiny 寄存器};
-					\node[align=center] at (4,5.25) {缓存};
-					\node at (4,4.30) {DRAM};
-					\node at (4,3.20) {NVM};
-					\node at (4,2.35) {SSD};
-					\node at (4,1.50) {HDD};
-					\node at (4,0.48) {磁带};
-
-					% Capacity and cost scales.
-					\draw[<->] (0,-0.55) -- (8,-0.55);
-					\node at (4,-0.95) {容量};
-					\draw[->] (-0.35,0) -- (3.85,7.35);
-					\node[rotate=59] at (1.65,4.2) {成本};
-				\end{tikzpicture}
+				% 图独立存放在 tikz/memory-pyramid.tex，由 Makefile 预编译。
+				\includegraphics{tikz/memory-pyramid.pdf}
 			\end{figure}
 			\vskip1ex
 		\end{column}
@@ -400,48 +372,37 @@
 \end{frame}
 
 \begin{frame}{缓冲区}
-       \begin{tikzpicture}[
-        x=0.92cm, y=1cm, font=\small,
-        cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
-                    minimum width=1.15cm, minimum height=0.78cm, align=center},
-        buffer/.style={draw=black!55, fill=blue!16,
-                       minimum width=2cm, minimum height=0.78cm, align=center},
-        cache/.style={draw=black!55, fill=gray!28,
-                      minimum width=1.65cm, minimum height=2.5cm, align=center},
-        memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
-                       minimum width=2.35cm, minimum height=2.75cm, align=center},
-        flow/.style={->, line width=0.75pt, black!75},
-        operation/.style={draw=tsinghua!90!black, fill=yellow!55,
-                          inner sep=2pt, font=\scriptsize},
-        persisted/.style={draw=tsinghua!90!black, fill=tsinghua!18,
-                          inner sep=2pt, font=\scriptsize},
-        failure/.style={draw=deepred, fill=deepred!12,
-                        text=deepred, inner sep=2pt, font=\scriptsize}
-        ]
-        % Keep the same bounding box on every overlay.
-        \path[use as bounding box] (-0.85,0.45) rectangle (11.35,5.2);
+    % 该图独立存放在 tikz/buffer.tex，由 Makefile 预编译为 tikz/buffer.pdf。
+    \centering
+    \includegraphics{tikz/buffer.pdf}
 
-        \node at (-0.1,4.3) {线程1};
-        \node at (-0.1,2.55) {线程2};
-        \node[cpu] (cpu1) at (1.18,4.3) {CPU};
-        \node[buffer] (buffer1) at (3.2,4.3) {写缓冲区};
-        \node[cpu] (cpu2) at (1.18,2.55) {CPU};
-        \node[buffer] (buffer2) at (3.2,2.55) {写缓冲区};
-        \node[cache] (cache) at (5.42,3.425) {缓存};
+    \vfill
 
-        \node[memory] (mem) at (9.05,3.425) {};
-        \node[align=center] at (mem.center) {非易失性内存};
+    \begin{itemize}
+        \item \highlight{写缓冲区}：线程局部所有，将写操作按顺序写回缓存 $\rightarrow$ 导致线程间的写-读重排
+        \item \highlight{缓存}：所有线程共享，将同地址的写操作按顺序写回主存 $\rightarrow$ 导致对不同地址的写-写重排
+        \item \highlight{NVM}：写操作到达此处即\highlight{持久化}，即使发生崩溃也不会丢失
+    \end{itemize}
+\end{frame}
 
-        \draw[flow] (cpu1.east) -- (buffer1.west);
-        \draw[flow] (cpu2.east) -- (buffer2.west);
-        \draw[flow] (buffer1.east) -- (cache.west |- buffer1.east);
-        \draw[flow] (buffer2.east) -- (cache.west |- buffer2.east);
-        \draw[flow] (cache.east) -- (mem.west);
-        \end{tikzpicture}
+\begin{frame}{崩溃}
+    % 图独立存放在 tikz/buffer-crash.tex，由 Makefile 预编译。
+    \centering
+    \includegraphics{tikz/buffer-crash.pdf}
+
+    \vfill
+
+    \begin{itemize}
+        \item 单机场景下的NVM采用\highlight{完全崩溃模型}
+        \item 崩溃将导致所有数据丢失，除非其已持久化（到达NVM）
+        \item 恢复后，程序从初始位置开始重新执行
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{操作语义}
+    以示例1为例，考虑程序$a \assigns 1; b \assigns 1;$
     \centering
+    \vfill
     \begin{tikzpicture}[
         x=0.92cm, y=1cm, font=\small,
         cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
@@ -461,7 +422,7 @@
                         text=deepred, inner sep=2pt, font=\scriptsize}
     ]
         % Keep the same bounding box on every overlay.
-        \path[use as bounding box] (-0.2,0.45) rectangle (11.35,5.2);
+        % \path[use as bounding box] (-0.2,0.45) rectangle (11.35,5.2);
 
         \only<1->{
             \node[cpu] (cpu) at (1.18,3.42) {CPU};
@@ -527,18 +488,24 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{声明语义}
-    执行图中的节点是程序的访存操作，有向边则是操作间的序关系
-    \vfill
-    \centering
-    \begin{tikzpicture}[executiongraph]
-        \node[visible] (W_a) {$\writeE(a, 1)$};
-        \node[visible] (W_b) [right=3.2cm of W_a] {$\writeE(b, 1)$};
+\begin{frame}{声明语义：执行图}
+    内存模型的声明语义是一组\highlight{执行图} $G$ 的集合。执行图为有向图，其节点是程序中的访存事件，带标签的边代表事件间的序关系
+    \vspace{1em}
+    \begin{itemize}
+        \item 程序顺序$\po$ 刻画了指令被发射的顺序
+        \item 读取顺序$\rf$ 刻画了读操作读到的值的来源
+        \item 修改顺序$\mo$ 刻画了对同一地址的写操作的全局可见顺序
+        \item ……
+        \item 持久顺序$\nvo$ 刻画了写操作到达NVM（持久化）的顺序
+    \end{itemize}
+\end{frame}
 
-        \draw[solidarrow] (W_a) -- node[above] {\po} (W_b);
-        \draw[->, dotted, color=Sepia, line width=1pt, shorten >=2pt, shorten <=2pt, bend left=35]
-            (W_b) to node[below] {\nvo} (W_a);
-    \end{tikzpicture}
+\begin{frame}{声明语义}
+   以示例1为例，考虑程序$a \assigns 1; b \assigns 1;$
+   \centering
+    % 图独立存放在 tikz/decl-graph.tex，由 Makefile 预编译。
+    \vfill
+    \includegraphics{tikz/decl-graph.pdf}
 
     \vfill
     \begin{itemize}
@@ -548,8 +515,9 @@
 \end{frame}
 
 \begin{frame}{公理}
-	执行图中的序关系并非任意，而是必须符合内存模型特定的公理
-	\begin{block}{NVM 公理}
+	通过给出一组公理限制执行图上的序关系，每个内存模型都对应满足公理的特定执行图集合。
+
+	\begin{block}{Px86 公理}
 
 		存在$G.E \cap (\writeE \cup \RMW)$ 上的全序 $\nvo$，使得
 
@@ -563,7 +531,6 @@
 		\end{enumerate}
 	\end{block}
 \end{frame}
-
 
 
 \section[分布式语义]{分离式共享内存系统及其内存模型}
@@ -740,51 +707,24 @@
 	\begin{figure}[ht]
 		\begin{subfigure}[t]{0.4\textwidth}
 			\centering
-			\begin{tikzpicture}[executiongraph]
-				\node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
-				\node[visible] (W_x1) [below left=1.2cm and 0.2cm of W_x0] {$\writeE(x, 1)$};
-				\node[visible] (R_x1) [below right=1.2cm and 0.2cm of W_x0] {$\readE(x, 1)$};
-
-				\node[failed, fit=(W_x1), label={left:$\lightning$}] (failed_n1) {};
-
-				\draw[solidarrow] (W_x0) -- (W_x1);
-				\draw[moarrow, bend right=30] (W_x0) to node [left] {\mo} (W_x1);
-				\draw[solidarrow] (W_x0) -- (R_x1);
-				\draw[rfarrow] (W_x1) to node[above] {\rf} (R_x1);
-				% \draw[tpo, bend right=30] (W_x1) to node [below] {\mo} (R_x1);
-			\end{tikzpicture}
+			% 图独立存放在 tikz/exec-chain-1.tex，由 Makefile 预编译。
+			\includegraphics{tikz/exec-chain-1.pdf}
 			\caption{执行图1：第一次崩溃前}
 			\label{fig:graph-dsm-example-a-era-1}
 		\end{subfigure}
 		\hfill
 		\begin{subfigure}[t]{0.4\textwidth}
 			\centering
-			\begin{tikzpicture}[executiongraph]
-				\node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
-				\node[visible, label={left:$\eta_2$}] (W_x1) [below=0.7cm of W_x0] {$\writeE(x, 1)$};
-				\node[visible] (W_x1_again) [below=0.7cm of W_x1] {$\writeE(x, 1)$};
-
-				\node[failed, fit=(W_x1_again), label={left:$\lightning$}] (failed_n1) {};
-
-				\draw[solidarrow] (W_x0) -- (W_x1);
-				\draw[moarrow, bend left=30] (W_x0) to node [right] {\mo} (W_x1);
-				\draw[solidarrow] (W_x1) -- (W_x1_again);
-				\draw[moarrow, bend left=30] (W_x1) to node [right] {\mo} (W_x1_again);
-			\end{tikzpicture}
+			% 图独立存放在 tikz/exec-chain-2.tex，由 Makefile 预编译。
+			\includegraphics{tikz/exec-chain-2.pdf}
 			\caption{执行图2: 第二次崩溃前}
 			\label{fig:graph-dsm-example-a-era-2}
 		\end{subfigure}
 		\hfill
 		\begin{subfigure}[t]{0.4\textwidth}
 			\centering
-			\begin{tikzpicture}[executiongraph]
-				\node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
-				\node[visible] (R_x0) [below= of W_x0] {$\readE(x, 0)$};
-
-				\draw[solidarrow] (W_x0) -- (R_x0);
-				\draw[rfarrow, bend left=30] (W_x0) to node [right] {\rf} (R_x0);
-				% \draw[tpoarrow, bend right=30] (W_x0) to node [left] {\tpo} (R_x0);
-			\end{tikzpicture}
+			% 图独立存放在 tikz/exec-chain-3.tex，由 Makefile 预编译。
+			\includegraphics{tikz/exec-chain-3.pdf}
 			\caption{执行图3: 第二次崩溃后}
 			\label{fig:graph-dsm-example-a-era-3}
 		\end{subfigure}
@@ -845,26 +785,8 @@
     \end{itemize}
     \vfill
     \centering
-    \begin{tikzpicture}[x=1cm,y=1cm]
-        % Nested sets: 可达 $\subset$ 无崩溃可达 $\subset$ 正确.
-        \fill[tsinghua!8] (0,0) ellipse (5.0cm and 2.65cm);
-        \draw[very thick, tsinghua] (0,0) ellipse (5.0cm and 2.65cm);
-        \fill[orange!18] (0,0) ellipse (3.55cm and 1.85cm);
-        \draw[very thick, orange!85!black] (0,0) ellipse (3.55cm and 1.85cm);
-        \fill[teal!22] (0,0) ellipse (2.05cm and 1.05cm);
-        \draw[very thick, teal!75!black] (0,0) ellipse (2.05cm and 1.05cm);
-
-        \node[font=\large\bfseries, text=tsinghua] at (0,2.2) {正确};
-        \node[font=\large\bfseries, text=orange!85!black] at (0,1.4) {无崩溃可达};
-        \node[font=\large\bfseries, text=teal!75!black] at (0,0) {可达};
-        \draw[
-            decorate,
-            decoration={brace, amplitude=8pt},
-            very thick,
-            tsinghua
-        ] (3.55,1.45) -- (3.55,-1.45)
-            node[midway, right=5pt, font=\bfseries, text=tsinghua] {鲁棒性};
-    \end{tikzpicture}
+    % 图独立存放在 tikz/robustness.tex，由 Makefile 预编译。
+    \includegraphics{tikz/robustness.pdf}
 \end{frame}
 
 \begin{frame}{总体思路}

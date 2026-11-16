@@ -1,0 +1,17 @@
+% 「执行链示例」中的第三张执行图。
+% 由 ../Makefile 编译为 tikz/exec-chain-3.pdf。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[executiongraph]
+    \node[persisted, label={left:$\bot$}] (W_x0) {$\writeE(x, 0)$};
+    \node[visible] (R_x0) [below= of W_x0] {$\readE(x, 0)$};
+
+    \draw[solidarrow] (W_x0) -- (R_x0);
+    \draw[rfarrow, bend left=30] (W_x0) to node [right] {\rf} (R_x0);
+    % \draw[tpoarrow, bend right=30] (W_x0) to node [left] {\tpo} (R_x0);
+\end{tikzpicture}
+\end{document}

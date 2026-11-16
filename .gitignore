@@ -25,6 +25,9 @@ slide.pdf
 supplementary.pdf
 figures/tikz/
 
+# 独立 TikZ 图的编译产物
+tikz/*.pdf
+
 # AI
 .codex
 

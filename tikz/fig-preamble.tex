@@ -1,0 +1,20 @@
+% 独立 TikZ 图的公共导言区（由 ../Makefile 以 XeLaTeX 编译）。
+% 这里重复 slide.tex 的字体、字号与颜色设置，保证预编译出的 PDF
+% 与直接嵌在幻灯片里的效果一致。
+\usepackage{ctex}
+\usepackage[T1]{fontenc}
+
+% 与 slide.tex 相同的宏包与 TikZ 库（含 executiongraph 等样式）。
+\input{packages.tex}
+
+% Tsinghua.sty 与 slide.tex 中定义的颜色。
+\xdefinecolor{tsinghua}{rgb}{0.455,0.204,0.506}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+\input{macros.tex}
+
+% beamer 默认把正文字体设为无衬线体；图文件用 11pt（与 beamer 默认
+% 的 size11.clo 相同）配合这里的设置，即可复现幻灯片的字体效果。
+\renewcommand{\familydefault}{\sfdefault}

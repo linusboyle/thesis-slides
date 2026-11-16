@@ -1,0 +1,39 @@
+% 「研究对象」一帧中的存储层级金字塔图。
+% 由 ../Makefile 编译为 tikz/memory-pyramid.pdf。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[
+    x=0.86cm,
+    y=0.58cm,
+    font=\sffamily\scriptsize,
+    line width=0.7pt,
+    >=Latex
+]
+    % Clip only the pyramid; the scales sit outside this scope.
+    \begin{scope}
+        \clip (0,0) -- (4,7) -- (8,0) -- cycle;
+        \fill[gray!32] (0,2.75) rectangle (8,3.75);
+        \draw (0,0) -- (4,7) -- (8,0) -- cycle;
+        \foreach \y in {0.95, 2.05, 2.75, 3.75, 4.85, 5.65} {
+            \draw (4*\y/7,\y) -- ({8-4*\y/7},\y);
+        }
+    \end{scope}
+    \node[align=center] at (4,6.2) {\tiny 寄存器};
+    \node[align=center] at (4,5.25) {缓存};
+    \node at (4,4.30) {DRAM};
+    \node at (4,3.20) {NVM};
+    \node at (4,2.35) {SSD};
+    \node at (4,1.50) {HDD};
+    \node at (4,0.48) {磁带};
+
+    % Capacity and cost scales.
+    \draw[<->] (0,-0.55) -- (8,-0.55);
+    \node at (4,-0.95) {容量};
+    \draw[->] (-0.35,0) -- (3.85,7.35);
+    \node[rotate=59] at (1.65,4.2) {成本};
+\end{tikzpicture}
+\end{document}

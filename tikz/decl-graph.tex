@@ -1,0 +1,17 @@
+% 「声明语义」一帧中的执行图。
+% 由 ../Makefile 编译为 tikz/decl-graph.pdf。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[executiongraph]
+    \node[visible] (W_a) {$\writeE(a, 1)$};
+    \node[visible] (W_b) [right=3.2cm of W_a] {$\writeE(b, 1)$};
+
+    \draw[solidarrow] (W_a) -- node[above] {\po} (W_b);
+    \draw[->, dotted, color=Sepia, line width=1pt, shorten >=2pt, shorten <=2pt, bend left=35]
+        (W_b) to node[below] {\nvo} (W_a);
+\end{tikzpicture}
+\end{document}
