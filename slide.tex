@@ -330,7 +330,7 @@
         \begin{itemize}
             \item 基于不变式综合的验证方法（\S~6）
         \end{itemize}
-        \item 声明语义更加适合自动化的验证
+        \item 声明语义更加适合自动化验证
         \begin{itemize}
             \item 基于鲁棒性检验的验证方法（\S~5）
         \end{itemize}
@@ -345,7 +345,7 @@
         称运行于NVM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性内存状态都满足给定的安全属性$\phi$。
     \end{block}
     \vfill
-    直观理解：无论如何崩溃，程序恢复后的状态必然是一致的。
+    直观理解：无论如何崩溃，程序恢复后的状态必然满足给定条件。
 \end{frame}
 % \begin{frame}{研究对象}
 %     \begin{minipage}[c]{0.55\linewidth}
@@ -390,15 +390,55 @@
     \includegraphics[width=0.85\linewidth]{pic/methodology.pdf}
 \end{frame}
 
-\section[单机语义]{非易失性内存系统及其内存模型}
+\section[单机语义]{非易失性内存在完全崩溃模型下的形式化语义}
 
 \begin{frame}{内存层级}
-    非易失性内存系统和常见的架构类似，采用CPU-缓存-主存的内存层级。
+    单机场景下的NVM语义相对简单。以x86架构为例，影响语义的主要因素是\highlight{缓冲区}以及\highlight{崩溃}。
     \begin{figure}
         \includegraphics[width=0.6\linewidth]{pic/nvmm-hierarchy.pdf}
     \end{figure}
 \end{frame}
 
+\begin{frame}{缓冲区}
+       \begin{tikzpicture}[
+        x=0.92cm, y=1cm, font=\small,
+        cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
+                    minimum width=1.15cm, minimum height=0.78cm, align=center},
+        buffer/.style={draw=black!55, fill=blue!16,
+                       minimum width=2cm, minimum height=0.78cm, align=center},
+        cache/.style={draw=black!55, fill=gray!28,
+                      minimum width=1.65cm, minimum height=2.5cm, align=center},
+        memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
+                       minimum width=2.35cm, minimum height=2.75cm, align=center},
+        flow/.style={->, line width=0.75pt, black!75},
+        operation/.style={draw=tsinghua!90!black, fill=yellow!55,
+                          inner sep=2pt, font=\scriptsize},
+        persisted/.style={draw=tsinghua!90!black, fill=tsinghua!18,
+                          inner sep=2pt, font=\scriptsize},
+        failure/.style={draw=deepred, fill=deepred!12,
+                        text=deepred, inner sep=2pt, font=\scriptsize}
+        ]
+        % Keep the same bounding box on every overlay.
+        \path[use as bounding box] (-0.85,0.45) rectangle (11.35,5.2);
+
+        \node at (-0.1,4.3) {线程1};
+        \node at (-0.1,2.55) {线程2};
+        \node[cpu] (cpu1) at (1.18,4.3) {CPU};
+        \node[buffer] (buffer1) at (3.2,4.3) {写缓冲区};
+        \node[cpu] (cpu2) at (1.18,2.55) {CPU};
+        \node[buffer] (buffer2) at (3.2,2.55) {写缓冲区};
+        \node[cache] (cache) at (5.42,3.425) {缓存};
+
+        \node[memory] (mem) at (9.05,3.425) {};
+        \node[align=center] at (mem.center) {非易失性内存};
+
+        \draw[flow] (cpu1.east) -- (buffer1.west);
+        \draw[flow] (cpu2.east) -- (buffer2.west);
+        \draw[flow] (buffer1.east) -- (cache.west |- buffer1.east);
+        \draw[flow] (buffer2.east) -- (cache.west |- buffer2.east);
+        \draw[flow] (cache.east) -- (mem.west);
+        \end{tikzpicture}
+\end{frame}
 
 \begin{frame}{操作语义}
     \centering
