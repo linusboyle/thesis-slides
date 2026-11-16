@@ -6,7 +6,7 @@
 
 \author{韩志磊}
 \title{面向非易失性内存的并发程序形式化语义与验证方法研究}
-\subtitle{博士学位论文答辩}
+% \subtitle{博士学位论文答辩}
 \institute{清华大学软件学院}
 \date{\today}
 \usepackage{Tsinghua}
@@ -32,7 +32,6 @@
 
 \input{macros}
 
-
 \begin{document}
 
 \kaishu
@@ -52,12 +51,95 @@
 
 \section{课题背景}
 
+\begin{frame}{研究背景}
+	随着对计算系统的现实需求日益增长，新兴的软硬件被不断地催生出来。
+
+	\vspace{0.8em}
+	\begin{minipage}[c]{0.40\linewidth}
+		\begin{minipage}[c]{0.26\linewidth}
+			\centering
+			\includegraphics[width=0.95\linewidth]{pic/failure-icon.png}
+		\end{minipage}\hfill
+		\begin{minipage}[c]{0.70\linewidth}
+			{\large\highlight{安全攸关领域}}\par
+			\vspace{0.4em}
+			{\small 系统崩溃时如何\\保证数据安全？}
+		\end{minipage}
+
+		\vspace{2.4em}
+
+		\begin{minipage}[c]{0.26\linewidth}
+			\centering
+			\includegraphics[trim=9 52 8 53, clip, width=\linewidth]{pic/dram-icon.png}
+		\end{minipage}\hfill
+		\begin{minipage}[c]{0.70\linewidth}
+			{\large\highlight{内存墙问题}}\par
+			\vspace{0.4em}
+			{\small 如何增大内存带宽\\与容量？}
+		\end{minipage}
+	\end{minipage}%
+	\hfill
+	\begin{minipage}[c]{0.52\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{pic/memory-wall.png}
+	\end{minipage}
+\end{frame}
+
+\begin{frame}{NVM}
+	\begin{columns}
+		\begin{column}{0.4\textwidth}
+			非易失性内存（NVM）
+            \begin{enumerate}
+                \item 类似DRAM的随机存储器
+                \item 类似硬盘的非易失介质
+                \item 主要应用于云计算、物联网
+            \end{enumerate}
+		\end{column}
+		\begin{column}{0.6\textwidth}
+			\begin{figure}
+				\centering
+				\begin{tikzpicture}[
+					x=0.86cm,
+					y=0.58cm,
+					font=\sffamily\scriptsize,
+					line width=0.7pt,
+					>=Latex
+				]
+					% Clip only the pyramid; the scales sit outside this scope.
+					\begin{scope}
+						\clip (0,0) -- (4,7) -- (8,0) -- cycle;
+						\fill[gray!32] (0,2.75) rectangle (8,3.75);
+						\draw (0,0) -- (4,7) -- (8,0) -- cycle;
+						\foreach \y in {0.95, 2.05, 2.75, 3.75, 4.85, 5.65} {
+							\draw (4*\y/7,\y) -- ({8-4*\y/7},\y);
+						}
+					\end{scope}
+					\node[align=center] at (4,6.2) {\tiny 寄存器};
+					\node[align=center] at (4,5.25) {缓存};
+					\node at (4,4.30) {DRAM};
+					\node at (4,3.20) {NVM};
+					\node at (4,2.35) {SSD};
+					\node at (4,1.50) {HDD};
+					\node at (4,0.48) {磁带};
+
+					% Capacity and cost scales.
+					\draw[<->] (0,-0.55) -- (8,-0.55);
+					\node at (4,-0.95) {容量};
+					\draw[->] (-0.35,0) -- (3.85,7.35);
+					\node[rotate=59] at (1.65,4.2) {成本};
+				\end{tikzpicture}
+			\end{figure}
+			\vskip1ex
+		\end{column}
+	\end{columns}
+\end{frame}
+
 \begin{frame}{内存模型}
     随着计算系统不断发展，程序语义随之变化，从而要求新的语义建模工具。
     % 存与算是计算系统发展的两个维度，也对应着形式化语义模型的发展脉络。形式
     \begin{itemize}
-        \item 算（经典形式语义学）：规定与平台无关的程序执行语义
-        \item 存（\highlight{内存模型}）：刻画访存操作的顺序与语义
+        \item 算（经典形式语义学）：规定平台无关的程序执行语义
+        \item 存（\highlight{内存模型}）：规定在特定内存系统下，访存操作的顺序与语义
     \end{itemize}
     \vspace{0.5em}
     \centering
@@ -115,7 +197,7 @@
     	    & \includegraphics[height=0.14\textwidth]{pic/optane.png}
     	    & \includegraphics[height=0.14\textwidth]{pic/cxl.png} \\
     	单机        & 单机       & 分布式       \\
-    	DRAM      & NVMM     & DSM       \\
+    	DRAM      & NVM     & DSM       \\
     	---       & 2019（傲腾） & 2023（CXL） \\
     	无崩溃模型     & 完全崩溃模型   & 部分崩溃模型    \\
     \end{tabular}
@@ -126,7 +208,7 @@
     \includegraphics[width=0.85\linewidth]{pic/methodology.pdf}
 \end{frame}
 
-\section[NVMM的语义]{非易失性内存系统及其内存模型}
+\section[单机语义]{非易失性内存系统及其内存模型}
 
 \begin{frame}{内存层级}
     非易失性内存系统和常见的架构类似，采用CPU-缓存-主存的内存层级。
@@ -135,58 +217,9 @@
     \end{figure}
 \end{frame}
 
-\begin{frame}{NVMM}
-	\begin{columns}
-		\begin{column}{0.4\textwidth}
-			非易失性主存（NVMM）
-            \begin{enumerate}
-                \item 类似DRAM的随机存储器
-                \item 类似硬盘的非易失介质
-                \item 主要应用于云计算、物联网
-            \end{enumerate}
-		\end{column}
-		\begin{column}{0.6\textwidth}
-			\begin{figure}
-				\centering
-				\begin{tikzpicture}[
-					x=0.86cm,
-					y=0.58cm,
-					font=\sffamily\scriptsize,
-					line width=0.7pt,
-					>=Latex
-				]
-					% Clip only the pyramid; the scales sit outside this scope.
-					\begin{scope}
-						\clip (0,0) -- (4,7) -- (8,0) -- cycle;
-						\fill[gray!32] (0,2.75) rectangle (8,3.75);
-						\draw (0,0) -- (4,7) -- (8,0) -- cycle;
-						\foreach \y in {0.95, 2.05, 2.75, 3.75, 4.85, 5.65} {
-							\draw (4*\y/7,\y) -- ({8-4*\y/7},\y);
-						}
-					\end{scope}
-					\node[align=center] at (4,6.2) {\tiny 寄存器};
-					\node[align=center] at (4,5.25) {缓存};
-					\node at (4,4.30) {DRAM};
-					\node at (4,3.20) {NVMM};
-					\node at (4,2.35) {SSD};
-					\node at (4,1.50) {HDD};
-					\node at (4,0.48) {磁带};
-
-					% Capacity and cost scales.
-					\draw[<->] (0,-0.55) -- (8,-0.55);
-					\node at (4,-0.95) {容量};
-					\draw[->] (-0.35,0) -- (3.85,7.35);
-					\node[rotate=59] at (1.65,4.2) {成本};
-				\end{tikzpicture}
-			\end{figure}
-			\vskip1ex
-		\end{column}
-	\end{columns}
-\end{frame}
-
 \begin{frame}{示例1}
     \centering
-    在NVMM下，程序$a \assigns 1; b \assigns 1$的一条可能执行：
+    在NVM下，程序$a \assigns 1; b \assigns 1$的一条可能执行：
     \vfill
     \begin{columns}
         \begin{column}{0.4\textwidth}
@@ -208,7 +241,7 @@
 
 \begin{frame}{示例2}
     \centering
-    在NVMM下，执行链表的节点插入操作：
+    在NVM下，执行链表的节点插入操作：
     \vfill
     \begin{figure}
         \includegraphics[width=\linewidth]{pic/nvm-list-exp.pdf}
@@ -278,7 +311,7 @@
             \node[cache] (cache) at (5.42,3.42) {缓存};
 
             \node[memory] (mem) at (9.05,3.42) {};
-            \node[align=center] at ([yshift=0.75cm]mem.center) {非易失性主存};
+            \node[align=center] at ([yshift=0.75cm]mem.center) {非易失性内存};
 
             \draw[flow] (cpu.east) -- (buffer.west);
             \draw[flow] (buffer.east) -- (cache.west);
@@ -330,7 +363,7 @@
 
     \vfill
     \begin{itemize}
-        \item<3-> $a \assigns 1$ 先到达缓存，但尚未写回非易失性主存
+        \item<3-> $a \assigns 1$ 先到达缓存，但尚未写回非易失性内存
         \item<6-> $b \assigns 1$ 随后到达缓存，并先于 $a \assigns 1$ 写回
         \item<9-> 崩溃后从主存恢复，观察到 $a \mapsto 0, b \mapsto 1$
     \end{itemize}
@@ -358,7 +391,7 @@
 
 \begin{frame}{公理}
 	执行图中的序关系并非任意，而是必须符合内存模型特定的公理
-	\begin{block}{NVMM 公理}
+	\begin{block}{NVM 公理}
 
 		存在$G.E \cap (\writeE \cup \RMW)$ 上的全序 $\nvo$，使得
 
@@ -388,304 +421,20 @@
 
 \begin{frame}{正确性条件}
 
-    无论采取何种语义和验证方式，NVMM正确性保障的目标相同，即证明其\highlight{崩溃一致性}：
+    无论采取何种语义和验证方式，NVM正确性保障的目标相同，即证明其\highlight{崩溃一致性}：
     \vfill
     \begin{block}{崩溃一致性}
-        称运行于NVMM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性主存状态都满足给定的安全属性$\phi$。
+        称运行于NVM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性内存状态都满足给定的安全属性$\phi$。
     \end{block}
     \vfill
     直观理解：无论如何崩溃，程序恢复后的状态必然是一致的。
 \end{frame}
 
-\section{基于鲁棒性检查的验证方法}
-
-\begin{frame}{鲁棒性}
-    \begin{itemize}
-        \item \highlight{鲁棒性}是验证程序崩溃一致性的一种充分不必要条件
-        \item 称程序是鲁棒的，当且仅当其任意可达状态均在无崩溃执行下可达
-    \end{itemize}
-    \vfill
-    \centering
-    \begin{tikzpicture}[x=1cm,y=1cm]
-        % Nested sets: 可达 $\subset$ 无崩溃可达 $\subset$ 正确.
-        \fill[tsinghua!8] (0,0) ellipse (5.0cm and 2.65cm);
-        \draw[very thick, tsinghua] (0,0) ellipse (5.0cm and 2.65cm);
-        \fill[orange!18] (0,0) ellipse (3.55cm and 1.85cm);
-        \draw[very thick, orange!85!black] (0,0) ellipse (3.55cm and 1.85cm);
-        \fill[teal!22] (0,0) ellipse (2.05cm and 1.05cm);
-        \draw[very thick, teal!75!black] (0,0) ellipse (2.05cm and 1.05cm);
-
-        \node[font=\large\bfseries, text=tsinghua] at (0,2.2) {正确};
-        \node[font=\large\bfseries, text=orange!85!black] at (0,1.4) {无崩溃可达};
-        \node[font=\large\bfseries, text=teal!75!black] at (0,0) {可达};
-        \draw[
-            decorate,
-            decoration={brace, amplitude=8pt},
-            very thick,
-            tsinghua
-        ] (3.55,1.45) -- (3.55,-1.45)
-            node[midway, right=5pt, font=\bfseries, text=tsinghua] {鲁棒性};
-    \end{tikzpicture}
-\end{frame}
-
-\begin{frame}{总体思路}
-    检查鲁棒性要求遍历程序状态，并依次检查其可达性。例如，对于程序$a \assigns 1 \parallel b \assigns 1$
-
-    \vfill
-    \centering
-    \begin{tabular}{ccc}
-    \toprule
-      程序状态 & 是否可达 & 是否无崩溃可达 \\ 
-    \midrule
-     $(a \mapsto 0, b \mapsto 0)$ & \checkmark  & \checkmark \\ 
-     $(a \mapsto 0, b \mapsto 1)$ & \checkmark  & \checkmark \\ 
-     $(a \mapsto 1, b \mapsto 0)$ & \checkmark  & \checkmark \\ 
-     $(a \mapsto 1, b \mapsto 1)$ & \checkmark  & \checkmark \\ 
-    \bottomrule
-    \end{tabular}
-
-	\begin{block}{核心问题}
-		\begin{center}
-            给定状态$s$，如何检查$s$是否可达？
-		\end{center}
-	\end{block}
-
-\end{frame}
-
-\begin{frame}{恢复观测线程}
-    由数学归纳法，只需检查给定状态是否在一次崩溃后可达。
-    \vfill
-    恢复观测线程是在原本程序之外的一个\highlight{虚拟线程}，包含对所有内存位置的一次读取，其可用于将状态嵌入到崩溃前的执行图中。
-
-    \begin{columns}
-    	\begin{column}{0.4\textwidth}
-    		\begin{concurrentcode}
-    			x \assigns 1; & y \assigns 2;  \\
-    			\FLUSH x;     & \FLUSH y;       \\
-    			a \assigns y; & b \assigns x;  \\
-    			x \assigns a; & y \assigns b;  \\
-    		\end{concurrentcode}
-    	\end{column}
-    
-    	\begin{column}{0.5\textwidth}
-    		\begin{figure}
-    			\includegraphics[width=\linewidth]{pic/reduction-exp.pdf}
-    		\end{figure}
-    	\end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}{DTPO约束}
-    除已有的NVMM的公理，使用恢复观测线程得到的执行图需额外满足一定条件。为此定义关于刷新指令的DTPO约束：
-    \[
-    G.\dtpo \triangleq \bigcup_{x \in \variables} \flushE_x \times \left\{ w \in \writeE_x \mid \exists w' \in \domain(G.\rrf), (w', w) \in G.\mo  \right\}
-    \]
-    \[
-    G.\dtpo; \tpo~\text{是非自反的}
-    \]
-
-    \begin{block}{直观}
-        刷新指令的效果是缓存中的值立刻写回主存。因此，假设恢复观测线程读到$w'$，则$w'$后发生的写事件$w$都一定发生在刷新指令之后，否则与恢复后观测到$w'$的事实矛盾。
-    \end{block}
-\end{frame}
-
-\begin{frame}{可达性检查}
-    \begin{block}{核心问题}
-		\begin{center}
-            给定状态$s$，如何检查$s$是否可达？
-		\end{center}
-	\end{block}
-
-    \begin{itemize}
-        \item 为程序插桩，引入恢复观测线程
-        \item 得到插桩后的执行图
-        \item 检查执行图是否满足公理以及DTPO约束
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{状态遍历}
-    将约束编码为 SMT 公式，借助 DPLL 算法可高效遍历状态空间。
-
-\begin{columns}
-	\begin{column}{0.5\textwidth}
-		\begin{align}
-			\rho & = x_0 = 0 \land y_0 = 0 \tag{初始值}                   \\
-			     & \land x_1 = 1 \land a = y_1 \land x_2 = a \tag{线程1}  \\
-			     & \land y_2 = 2 \land b = x_3 \land y_3 = b \tag{线程2} \\
-			     & \land r_1 = x_4 \land r_2 = y_4 \tag{恢复观测线程}
-		\end{align}
-	\end{column}
-
-	\begin{column}{0.5\textwidth}
-		\begin{concurrentcode3}
-			x \assigns 1; & y \assigns 2; & r1 \assigns x; \\
-			\FLUSH x;     & \FLUSH y;     & r2 \assigns y; \\
-			a \assigns y; & b \assigns x; & \\
-			x \assigns a; & y \assigns b; & \\
-		\end{concurrentcode3}
-	\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{实现与评估}
-    针对 NVMM 程序的算法实现于原型工具 \pmverify 中。在PMDK \texttt{libpmemobj} 测试集上与动态工具 \psan 进行对比。
-    
-    \vfill
-    \centering
-	\begin{tabular}{llll}
-		\toprule
-		      & \pmverify{} & \psan{} & \psan{}* \\
-		\midrule
-		鲁棒    & 1           & 0       & 0        \\
-		非鲁棒   & 12          & 6       & 0        \\
-		未知    & 13          & 20      & 26       \\
-		惟一求解数 & 7           & 0       & 0        \\
-		平均时间  & 2768.42s    & 16.7s   & 5.7s     \\
-		标准差   & 1045.26s    & 9.98s   & 2.8s     \\
-		\bottomrule
-	\end{tabular}
-\end{frame}
-
-\section{基于不变式综合的验证方法}
-
-\begin{frame}{程序逻辑}
-    另一种常见的验证方法是基于程序逻辑生成验证条件
-	\begin{itemize}
-		\item 串行程序：霍尔逻辑 $\{P\}~c~\{Q\}$
-		\item 多线程并发程序：Owicki-Gries 推理$R, G \vdash \{P\}~c~\{Q\}$
-        \begin{equation}
-			      \inferrule{
-				      R_1, G_1 \text{ 与 }~R_2, G_2 \text{ 不相干 } \\\\
-				      R_1, G_1 \vdash \{P_1\}~c_1~\{Q_1\} \\\\
-				      R_2, G_2 \vdash \{P_2\}~c_2~\{Q_2\}
-			      }{
-				      \{Q\} \cup R_1 \cup R_2, G_1 \cup G_2 \vdash \{P_1 \land P_2\}~c_1~\parallel~c_2~\{Q\}
-			      }
-                  \tag{不相干性}
-        \end{equation}
-        \item 运行于NVMM 的并发程序：？
-	\end{itemize}
-\end{frame}
-
-\begin{frame}{一种面向NVMM的程序逻辑（\S~5.3）}
-
-    在Owicki-Gries推理的基础上可以得到一种适用于 NVMM 的程序逻辑。
-    \vfill
-    \highlight{主要挑战}：程序逻辑无法直接对崩溃后的状态进行推理。
-    \vfill
-    \begin{block}{辅助变量}
-        \begin{enumerate}
-            \item 对每个共享变量 $x$，引入一个新的共享变量 $x'$
-            \item $x$代表变量当前在缓存中的值，$x'$则代表变量在主存中的实际值。
-            \item 崩溃后，从NVMM恢复的值是$x'$。
-        \end{enumerate}
-    \end{block}
-    \vfill
-    可以证明引入辅助变量后的内存模型和原始的模型语义等价。
-\end{frame}
-
-\begin{frame}{稳定性}
-	除引入辅助变量，证明中的所有公式还需额外满足\highlight{稳定性}约束。
-
-	\vfill
-	\begin{definition}[稳定性]
-		若定义在 $\variables \cup \variables' \cup \registers$ 上的一阶逻辑公式 $\phi$ 满足
-		\[
-			\forall x \in \variables, \phi \rightarrow \phi[x\backslash x']
-		\]
-		则称 $\phi$ 是\emph{稳定的}。
-		\label{def:stability}
-	\end{definition}
-    \vfill
-    稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定写回副本的过程。
-\end{frame}
-
-\begin{frame}{示例}
-    目标：证明$\phi \triangleq z = 1 \rightarrow x = 1$在非易失性主存状态上恒成立
-
-    \begin{figure}
-    \begin{concurrentcode}
-        $\{I_1: I\}$ & $\{I_5: I \land a = 1 \rightarrow y = 1\}$ \\
-        x \assigns 1; & \WHILE a $\neq$ 1 \DO \\
-        $\{I_2: I \land x = 1\}$ & \qquad $\{I_6: I\}$ \\
-        \FLUSH x; & \qquad a \assigns y; \\
-        $\{I_3: I \land x' = 1\}$ & \qquad $\{I_7: I \land a = 1 \rightarrow y = 1\}$ \\
-        y \assigns 1; & $\{I_8: I \land y = 1\}$ \\
-        $\{I_4: I\}$ & z \assigns 1; \\
-        & $\{I_9: I\}$ \\
-    \end{concurrentcode}
-    \caption*{$I \triangleq x' = 1 \rightarrow x = 1 \land z' = 1 \rightarrow z = 1 \land y = 1 \rightarrow x' = 1 \land z = 1 \rightarrow x' = 1 \land z' = 1\rightarrow x' = 1$}
-    \end{figure}
-    
-    称$I_1, \ldots, I_9$ 为对应程序位置的\highlight{不变式}。
-\end{frame}
-
-\begin{frame}{验证条件}
-
-    为每个程序位置$i$引入未知谓词$I_i$，代表该位置的\emph{不变式}，则程序可被编码为验证条件。公式分为以下部分：
-    \vfill
-    \begin{itemize}
-        \item 初始值
-        \item 霍尔三元组有效性
-        \item 不相干性
-        \item 稳定性约束
-        \item 安全属性
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{示例}
-	\begin{align*}
-		\psi & \triangleq x = y = z = a = x' = y' = z' = 0 \rightarrow I_1(x, y, z, a, x', y', z') \ldots \tag{初始化}                          \\
-		     & \land I_1(x, y, z, a, x', y', z') \land x' = 1 \rightarrow I_2(x', y, z, a, x', y', z') \ldots \tag{有效性}                      \\
-		     & \land I_1(x, y, z, a, x', y', z') \land I_8(x, y, z, a, x', y', z') \rightarrow I_1(x, y, 1, a, x', y', z') \ldots \tag{不相干性} \\
-		     & \land I_1(x, y, z, a, x', y', z') \rightarrow  I_1(x, y, z, a, x, y', z') \ldots \tag{稳定性}                                    \\
-		     & \land I_1(x, y, z, a, x', y', z') \rightarrow  \phi[\overrightarrow{x'/x}] \ldots \tag{安全性}                                   \\
-	\end{align*}
-\end{frame}
-
-\begin{frame}{不变式综合}
-	上述编码满足\highlight{约束霍恩子句}（CHC）的形式。CHC存在一些高效求解算法，本课题采用CEGIS框架进行不变式综合。
-	\begin{figure}
-		\centering
-		\includegraphics[width=0.9\linewidth]{pic/black-box-cegis.pdf}
-	\end{figure}
-
-\end{frame}
-
-\begin{frame}{实现与评估}
-	基于不变式综合的验证方法实现于原型工具 \pinvince{} 中。在从文献中收集的一组测例集上和 \pmverify{} 的对比如下。
-
-    \vfill
-	\centering
-
-	\begin{tabular}{llll}
-		\toprule
-		       & \pinvince{} & $\pmverify$ \\
-		\midrule
-		正确     & 20          & 3               \\
-		错误     & 0           & 16              \\
-		未知     & 0           & 1               \\
-		平均时间   & 22.99s      & 25.01s          \\
-		标准差    & 29.39s      & 32.02s          \\
-		平均迭代次数 & 57.95       & -               \\
-		\bottomrule
-	\end{tabular}
-\end{frame}
-
-\begin{frame}{验证方法对比}
-    \begin{itemize}[<+->]
-        \item 两者都通过某种方式将崩溃消除，只考虑无崩溃执行
-        \item 都需要额外的约束建模崩溃的语义：DTPO约束 v.s. 稳定性约束
-        \item 鲁棒性验证基于声明语义，而不变式综合基于操作语义
-        % \item 声明语义要求访存操作有限，故处理无界循环时有误报
-    \end{itemize}
-\end{frame}
-
-\section[DSM的语义]{分离式共享内存系统及其内存模型}
+\section[分布式语义]{分离式共享内存系统及其内存模型}
 
 \begin{frame}{内存层级}
     \centering
-    和NVMM不同， DSM 是一种多节点的分布式系统
+    和NVM不同， DSM 是一种多节点的分布式系统
 
     \begin{figure}
         \includegraphics[width=0.8\linewidth]{pic/cxl.pdf}
@@ -708,7 +457,7 @@
 
     \begin{itemize}
         \item x86/TSO: 不合法
-        \item NVMM: 不合法
+        \item NVM: 不合法
         \item DSM: 合法
     \end{itemize}
 
@@ -948,6 +697,291 @@
     \end{itemize}
     
     本文也为相应的变体进行了形式化，并证明了其相对于DSM内存模型的强弱关系。
+\end{frame}
+
+
+\section{基于鲁棒性检查的验证方法}
+
+\begin{frame}{鲁棒性}
+    \begin{itemize}
+        \item \highlight{鲁棒性}是验证程序崩溃一致性的一种充分不必要条件
+        \item 称程序是鲁棒的，当且仅当其任意可达状态均在无崩溃执行下可达
+    \end{itemize}
+    \vfill
+    \centering
+    \begin{tikzpicture}[x=1cm,y=1cm]
+        % Nested sets: 可达 $\subset$ 无崩溃可达 $\subset$ 正确.
+        \fill[tsinghua!8] (0,0) ellipse (5.0cm and 2.65cm);
+        \draw[very thick, tsinghua] (0,0) ellipse (5.0cm and 2.65cm);
+        \fill[orange!18] (0,0) ellipse (3.55cm and 1.85cm);
+        \draw[very thick, orange!85!black] (0,0) ellipse (3.55cm and 1.85cm);
+        \fill[teal!22] (0,0) ellipse (2.05cm and 1.05cm);
+        \draw[very thick, teal!75!black] (0,0) ellipse (2.05cm and 1.05cm);
+
+        \node[font=\large\bfseries, text=tsinghua] at (0,2.2) {正确};
+        \node[font=\large\bfseries, text=orange!85!black] at (0,1.4) {无崩溃可达};
+        \node[font=\large\bfseries, text=teal!75!black] at (0,0) {可达};
+        \draw[
+            decorate,
+            decoration={brace, amplitude=8pt},
+            very thick,
+            tsinghua
+        ] (3.55,1.45) -- (3.55,-1.45)
+            node[midway, right=5pt, font=\bfseries, text=tsinghua] {鲁棒性};
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{总体思路}
+    检查鲁棒性要求遍历程序状态，并依次检查其可达性。例如，对于程序$a \assigns 1 \parallel b \assigns 1$
+
+    \vfill
+    \centering
+    \begin{tabular}{ccc}
+    \toprule
+      程序状态 & 是否可达 & 是否无崩溃可达 \\ 
+    \midrule
+     $(a \mapsto 0, b \mapsto 0)$ & \checkmark  & \checkmark \\ 
+     $(a \mapsto 0, b \mapsto 1)$ & \checkmark  & \checkmark \\ 
+     $(a \mapsto 1, b \mapsto 0)$ & \checkmark  & \checkmark \\ 
+     $(a \mapsto 1, b \mapsto 1)$ & \checkmark  & \checkmark \\ 
+    \bottomrule
+    \end{tabular}
+
+	\begin{block}{核心问题}
+		\begin{center}
+            给定状态$s$，如何检查$s$是否可达？
+		\end{center}
+	\end{block}
+
+\end{frame}
+
+\begin{frame}{恢复观测线程}
+    由数学归纳法，只需检查给定状态是否在一次崩溃后可达。
+    \vfill
+    恢复观测线程是在原本程序之外的一个\highlight{虚拟线程}，包含对所有内存位置的一次读取，其可用于将状态嵌入到崩溃前的执行图中。
+
+    \begin{columns}
+    	\begin{column}{0.4\textwidth}
+    		\begin{concurrentcode}
+    			x \assigns 1; & y \assigns 2;  \\
+    			\FLUSH x;     & \FLUSH y;       \\
+    			a \assigns y; & b \assigns x;  \\
+    			x \assigns a; & y \assigns b;  \\
+    		\end{concurrentcode}
+    	\end{column}
+    
+    	\begin{column}{0.5\textwidth}
+    		\begin{figure}
+    			\includegraphics[width=\linewidth]{pic/reduction-exp.pdf}
+    		\end{figure}
+    	\end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{DTPO约束}
+    除已有的NVM的公理，使用恢复观测线程得到的执行图需额外满足一定条件。为此定义关于刷新指令的DTPO约束：
+    \[
+    G.\dtpo \triangleq \bigcup_{x \in \variables} \flushE_x \times \left\{ w \in \writeE_x \mid \exists w' \in \domain(G.\rrf), (w', w) \in G.\mo  \right\}
+    \]
+    \[
+    G.\dtpo; \tpo~\text{是非自反的}
+    \]
+
+    \begin{block}{直观}
+        刷新指令的效果是缓存中的值立刻写回主存。因此，假设恢复观测线程读到$w'$，则$w'$后发生的写事件$w$都一定发生在刷新指令之后，否则与恢复后观测到$w'$的事实矛盾。
+    \end{block}
+\end{frame}
+
+\begin{frame}{可达性检查}
+    \begin{block}{核心问题}
+		\begin{center}
+            给定状态$s$，如何检查$s$是否可达？
+		\end{center}
+	\end{block}
+
+    \begin{itemize}
+        \item 为程序插桩，引入恢复观测线程
+        \item 得到插桩后的执行图
+        \item 检查执行图是否满足公理以及DTPO约束
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{状态遍历}
+    将约束编码为 SMT 公式，借助 DPLL 算法可高效遍历状态空间。
+
+\begin{columns}
+	\begin{column}{0.5\textwidth}
+		\begin{align}
+			\rho & = x_0 = 0 \land y_0 = 0 \tag{初始值}                   \\
+			     & \land x_1 = 1 \land a = y_1 \land x_2 = a \tag{线程1}  \\
+			     & \land y_2 = 2 \land b = x_3 \land y_3 = b \tag{线程2} \\
+			     & \land r_1 = x_4 \land r_2 = y_4 \tag{恢复观测线程}
+		\end{align}
+	\end{column}
+
+	\begin{column}{0.5\textwidth}
+		\begin{concurrentcode3}
+			x \assigns 1; & y \assigns 2; & r1 \assigns x; \\
+			\FLUSH x;     & \FLUSH y;     & r2 \assigns y; \\
+			a \assigns y; & b \assigns x; & \\
+			x \assigns a; & y \assigns b; & \\
+		\end{concurrentcode3}
+	\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{实现与评估}
+    针对 NVM 程序的算法实现于原型工具 \pmverify 中。在PMDK \texttt{libpmemobj} 测试集上与动态工具 \psan 进行对比。
+    
+    \vfill
+    \centering
+	\begin{tabular}{llll}
+		\toprule
+		      & \pmverify{} & \psan{} & \psan{}* \\
+		\midrule
+		鲁棒    & 1           & 0       & 0        \\
+		非鲁棒   & 12          & 6       & 0        \\
+		未知    & 13          & 20      & 26       \\
+		惟一求解数 & 7           & 0       & 0        \\
+		平均时间  & 2768.42s    & 16.7s   & 5.7s     \\
+		标准差   & 1045.26s    & 9.98s   & 2.8s     \\
+		\bottomrule
+	\end{tabular}
+\end{frame}
+
+\section{基于不变式综合的验证方法}
+
+\begin{frame}{程序逻辑}
+    另一种常见的验证方法是基于程序逻辑生成验证条件
+	\begin{itemize}
+		\item 串行程序：霍尔逻辑 $\{P\}~c~\{Q\}$
+		\item 多线程并发程序：Owicki-Gries 推理$R, G \vdash \{P\}~c~\{Q\}$
+        \begin{equation}
+			      \inferrule{
+				      R_1, G_1 \text{ 与 }~R_2, G_2 \text{ 不相干 } \\\\
+				      R_1, G_1 \vdash \{P_1\}~c_1~\{Q_1\} \\\\
+				      R_2, G_2 \vdash \{P_2\}~c_2~\{Q_2\}
+			      }{
+				      \{Q\} \cup R_1 \cup R_2, G_1 \cup G_2 \vdash \{P_1 \land P_2\}~c_1~\parallel~c_2~\{Q\}
+			      }
+                  \tag{不相干性}
+        \end{equation}
+        \item 运行于NVM 的并发程序：？
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{一种面向NVM的程序逻辑（\S~5.3）}
+
+    在Owicki-Gries推理的基础上可以得到一种适用于 NVM 的程序逻辑。
+    \vfill
+    \highlight{主要挑战}：程序逻辑无法直接对崩溃后的状态进行推理。
+    \vfill
+    \begin{block}{辅助变量}
+        \begin{enumerate}
+            \item 对每个共享变量 $x$，引入一个新的共享变量 $x'$
+            \item $x$代表变量当前在缓存中的值，$x'$则代表变量在主存中的实际值。
+            \item 崩溃后，从NVM恢复的值是$x'$。
+        \end{enumerate}
+    \end{block}
+    \vfill
+    可以证明引入辅助变量后的内存模型和原始的模型语义等价。
+\end{frame}
+
+\begin{frame}{稳定性}
+	除引入辅助变量，证明中的所有公式还需额外满足\highlight{稳定性}约束。
+
+	\vfill
+	\begin{definition}[稳定性]
+		若定义在 $\variables \cup \variables' \cup \registers$ 上的一阶逻辑公式 $\phi$ 满足
+		\[
+			\forall x \in \variables, \phi \rightarrow \phi[x\backslash x']
+		\]
+		则称 $\phi$ 是\emph{稳定的}。
+		\label{def:stability}
+	\end{definition}
+    \vfill
+    稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定写回副本的过程。
+\end{frame}
+
+\begin{frame}{示例}
+    目标：证明$\phi \triangleq z = 1 \rightarrow x = 1$在非易失性内存状态上恒成立
+
+    \begin{figure}
+    \begin{concurrentcode}
+        $\{I_1: I\}$ & $\{I_5: I \land a = 1 \rightarrow y = 1\}$ \\
+        x \assigns 1; & \WHILE a $\neq$ 1 \DO \\
+        $\{I_2: I \land x = 1\}$ & \qquad $\{I_6: I\}$ \\
+        \FLUSH x; & \qquad a \assigns y; \\
+        $\{I_3: I \land x' = 1\}$ & \qquad $\{I_7: I \land a = 1 \rightarrow y = 1\}$ \\
+        y \assigns 1; & $\{I_8: I \land y = 1\}$ \\
+        $\{I_4: I\}$ & z \assigns 1; \\
+        & $\{I_9: I\}$ \\
+    \end{concurrentcode}
+    \caption*{$I \triangleq x' = 1 \rightarrow x = 1 \land z' = 1 \rightarrow z = 1 \land y = 1 \rightarrow x' = 1 \land z = 1 \rightarrow x' = 1 \land z' = 1\rightarrow x' = 1$}
+    \end{figure}
+    
+    称$I_1, \ldots, I_9$ 为对应程序位置的\highlight{不变式}。
+\end{frame}
+
+\begin{frame}{验证条件}
+
+    为每个程序位置$i$引入未知谓词$I_i$，代表该位置的\emph{不变式}，则程序可被编码为验证条件。公式分为以下部分：
+    \vfill
+    \begin{itemize}
+        \item 初始值
+        \item 霍尔三元组有效性
+        \item 不相干性
+        \item 稳定性约束
+        \item 安全属性
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{示例}
+	\begin{align*}
+		\psi & \triangleq x = y = z = a = x' = y' = z' = 0 \rightarrow I_1(x, y, z, a, x', y', z') \ldots \tag{初始化}                          \\
+		     & \land I_1(x, y, z, a, x', y', z') \land x' = 1 \rightarrow I_2(x', y, z, a, x', y', z') \ldots \tag{有效性}                      \\
+		     & \land I_1(x, y, z, a, x', y', z') \land I_8(x, y, z, a, x', y', z') \rightarrow I_1(x, y, 1, a, x', y', z') \ldots \tag{不相干性} \\
+		     & \land I_1(x, y, z, a, x', y', z') \rightarrow  I_1(x, y, z, a, x, y', z') \ldots \tag{稳定性}                                    \\
+		     & \land I_1(x, y, z, a, x', y', z') \rightarrow  \phi[\overrightarrow{x'/x}] \ldots \tag{安全性}                                   \\
+	\end{align*}
+\end{frame}
+
+\begin{frame}{不变式综合}
+	上述编码满足\highlight{约束霍恩子句}（CHC）的形式。CHC存在一些高效求解算法，本课题采用CEGIS框架进行不变式综合。
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.9\linewidth]{pic/black-box-cegis.pdf}
+	\end{figure}
+
+\end{frame}
+
+\begin{frame}{实现与评估}
+	基于不变式综合的验证方法实现于原型工具 \pinvince{} 中。在从文献中收集的一组测例集上和 \pmverify{} 的对比如下。
+
+    \vfill
+	\centering
+
+	\begin{tabular}{llll}
+		\toprule
+		       & \pinvince{} & $\pmverify$ \\
+		\midrule
+		正确     & 20          & 3               \\
+		错误     & 0           & 16              \\
+		未知     & 0           & 1               \\
+		平均时间   & 22.99s      & 25.01s          \\
+		标准差    & 29.39s      & 32.02s          \\
+		平均迭代次数 & 57.95       & -               \\
+		\bottomrule
+	\end{tabular}
+\end{frame}
+
+\begin{frame}{验证方法对比}
+    \begin{itemize}[<+->]
+        \item 两者都通过某种方式将崩溃消除，只考虑无崩溃执行
+        \item 都需要额外的约束建模崩溃的语义：DTPO约束 v.s. 稳定性约束
+        \item 鲁棒性验证基于声明语义，而不变式综合基于操作语义
+        % \item 声明语义要求访存操作有限，故处理无界循环时有误报
+    \end{itemize}
 \end{frame}
 
 \section{总结与展望}
