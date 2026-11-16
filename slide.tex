@@ -95,16 +95,16 @@
 
 \begin{frame}{研究对象}
 	\begin{columns}
-		\begin{column}{0.4\textwidth}
-			非易失性内存（NVM）
-            \vspace{2em}
+		\begin{column}{0.35\textwidth}
+			\highlight{非易失性内存}（NVM）
+            \vspace{1em}
             \begin{enumerate}
                 \item 类似DRAM，可按字节随机存取
                 \item 类似硬盘，断电数据不丢失
                 \item 应用于云计算、物联网等领域
             \end{enumerate}
 		\end{column}
-		\begin{column}{0.6\textwidth}
+		\begin{column}{0.65\textwidth}
 			\begin{figure}
 				\centering
 				\begin{tikzpicture}[
@@ -165,28 +165,106 @@
 
 \begin{frame}{研究目的}
 
-    NVM的特性有别于传统的存储设备，为编程带来新的挑战
+    非易失性内存的特性有别于传统存储设备，为编程带来新的挑战
 
     \vspace{1em}
 
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item NVM具有非易失性
         \begin{itemize}
-            \item 程序的执行效果能够被保留到系统崩溃后 :)
-            \item 但这也包括程序中已经发生的错误 :(
+            \item 程序的执行效果能够被保留到系统崩溃后……
+            \item ……但这也包括程序中已经发生的错误 
         \end{itemize}
         \item 对内存的写操作是异步生效的
         \begin{itemize}
             \item 程序的执行效果可能只保留了一部分……
-            \item ……而且是乱序的!
+            \item ……并且它们是乱序写回的
         \end{itemize}
         \item 系统崩溃在不同场景下的作用范围不同
+        \begin{itemize}
+            \item 单机场景：完全崩溃模型
+            \item 分布式场景：部分崩溃模型
+        \end{itemize}
     \end{itemize}
 \end{frame}
 
+\begin{frame}{程序在NVM下的行为：示例1}
+    % \centering
+    程序$a \assigns 1; b \assigns 1$的一条可能执行如下。由于访存操作乱序写回，该程序表现出一般执行下无法观测到的行为。
+    \vfill
+    \begin{columns}
+        \begin{column}{0.4\textwidth}
+            \includegraphics[width=\linewidth]{pic/nvm-intro-exp.pdf}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+                \item $a \assigns 1$ 先于 $b \assigns 1$ 被处理器发射（可见顺序）
+                \item $b \assigns 1$ 先于 $a \assigns 1$ 到达主存（持久化顺序）
+                \item 若在$a \assigns 1$ 到达主存前发生崩溃，在程序恢复后可观察到状态$a \mapsto 0, b \mapsto 1$
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{程序在NVM下的行为：示例2}
+    考虑在NVM上执行链表的节点插入操作。链表的数据结构在崩溃后不一致，产生的野指针可能后续进一步导致数据被破坏。
+    \vfill
+    \begin{figure}
+        \includegraphics[width=\linewidth]{pic/nvm-list-exp.pdf}
+    \end{figure}
+
+\end{frame}
+
+\begin{frame}{程序在NVM下的行为：示例3}
+	\begin{concurrentcode}
+		x \assigns 1; & a \assigns x; \expected{// 1}               \\
+		& b \assigns x; \expected{// 0}                  \\
+	\end{concurrentcode}
+
+    % \begin{itemize}
+    %     \item x86 : 不合法
+    %     \item NVM（单机，完全崩溃）: 不合法
+    %     \item NVM（分布式，部分崩溃）: 合法
+    % \end{itemize}
+
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{c|c|c|c}
+    	&DRAM & NVM & NVM \\
+        \midrule
+    	&\includegraphics[height=0.14\textwidth]{pic/dimm.png}
+    	    & \includegraphics[height=0.14\textwidth]{pic/optane.png}
+    	    & \includegraphics[height=0.14\textwidth]{pic/cxl.png} \\
+    	系统架构 & 单机        & 单机       & 分布式       \\
+    	崩溃模型 & 无崩溃模型     & 完全崩溃模型   & 部分崩溃模型    \\
+    	内存模型 & x86-TSO       & Px86 & DTSO \\
+    	允许上述行为？ & \xmark{}      & \xmark{}    & \cmark{}     \\
+    \end{tabular}
+
+    % \vfill
+    % \centering
+    % 如何刻画上述程序行为？
+\end{frame}
+
+\begin{frame}{研究目标}
+    通过本文的研究，期望回答关于NVM的以下问题：
+    \vspace{1em}
+
+    \begin{enumerate}
+        \item 如何形式化地建模运行于NVM的并发程序语义？
+        \item NVM在不同场景下的语义差异是什么？
+        \item 该类程序的正确性条件（规约）如何表示？
+        \item 如何形式化验证该类程序的正确性？
+    \end{enumerate}
+\end{frame}
+
 \begin{frame}{内存模型}
-    随着计算系统不断发展，程序语义随之变化，从而要求新的语义建模工具。
-    % 存与算是计算系统发展的两个维度，也对应着形式化语义模型的发展脉络。形式
+
+    如何形式化地建模运行于NVM的并发程序语义？
+
+    % 随着计算系统不断发展，程序语义随之变化，从而要求新的语义建模工具。
     \begin{itemize}
         \item 算（经典形式语义学）：规定平台无关的程序执行语义
         \item 存（\highlight{内存模型}）：规定在特定内存系统下，访存操作的顺序与语义
@@ -213,92 +291,6 @@
         \only<2->{\node[below=0.9cm] at (5.6,0) {1979};}
         \only<3->{\node[below=0.9cm] at (9.8,0) {1990s $\sim$ 2010s};}
     \end{tikzpicture}
-\end{frame}
-
-% \begin{frame}{研究对象}
-%     \begin{minipage}[c]{0.55\linewidth}
-%         \begin{figure}
-%             \centering
-%             \includegraphics[width=\linewidth]{pic/memory-wall.png}
-%         \end{figure}
-%     \end{minipage}
-%     \hfill
-%     \begin{minipage}[c]{0.4\linewidth}
-%         本课题研究近年涌现出的一批新型并发系统及其内存模型，探索其语义建模与验证技术。
-%         \vfill
-%         \begin{itemize}
-%             \item 安全攸关系统的数据安全$\rightarrow$\\ \highlight{非易失性内存系统}
-%             \item 内存墙问题$\rightarrow$\\ \highlight{分离式共享内存系统}
-%         \end{itemize}
-%     \end{minipage}
-% \end{frame}
-
-\begin{frame}{崩溃}
-    这类新型并发系统的特点是\highlight{崩溃}会影响程序执行；而传统的内存模型框架并未考虑崩溃这一维度。
-
-    \vfill
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{c|c|c}
-    	传统多线程并发程序 & 非易失性内存系统 & 分离式共享内存系统 \\
-        \midrule
-    	\includegraphics[height=0.14\textwidth]{pic/dimm.png}
-    	    & \includegraphics[height=0.14\textwidth]{pic/optane.png}
-    	    & \includegraphics[height=0.14\textwidth]{pic/cxl.png} \\
-    	单机        & 单机       & 分布式       \\
-    	DRAM      & NVM     & DSM       \\
-    	---       & 2019（傲腾） & 2023（CXL） \\
-    	无崩溃模型     & 完全崩溃模型   & 部分崩溃模型    \\
-    \end{tabular}
-\end{frame}
-
-\begin{frame}{研究思路}
-    \centering
-    \includegraphics[width=0.85\linewidth]{pic/methodology.pdf}
-\end{frame}
-
-\section[单机语义]{非易失性内存系统及其内存模型}
-
-\begin{frame}{内存层级}
-    非易失性内存系统和常见的架构类似，采用CPU-缓存-主存的内存层级。
-    \begin{figure}
-        \includegraphics[width=0.6\linewidth]{pic/nvmm-hierarchy.pdf}
-    \end{figure}
-\end{frame}
-
-\begin{frame}{示例1}
-    \centering
-    在NVM下，程序$a \assigns 1; b \assigns 1$的一条可能执行：
-    \vfill
-    \begin{columns}
-        \begin{column}{0.4\textwidth}
-            \includegraphics[width=\linewidth]{pic/nvm-intro-exp.pdf}
-        \end{column}
-
-        \begin{column}{0.4\textwidth}
-            \begin{itemize}
-                \item $a \assigns 1$ 先于 $b \assigns 1$ 被处理器发射（可见顺序）
-                \item $b \assigns 1$ 先于 $a \assigns 1$ 到达主存（持久化顺序）
-                \item 在$a \assigns 1$ 到达主存前发生崩溃，恢复观察到状态$a \mapsto 0, b \mapsto 1$
-            \end{itemize}
-        \end{column}
-    \end{columns}
-    
-    \vfill
-    访存操作乱序写回，导致该程序表现出无崩溃执行下无法观测到的行为。
-\end{frame}
-
-\begin{frame}{示例2}
-    \centering
-    在NVM下，执行链表的节点插入操作：
-    \vfill
-    \begin{figure}
-        \includegraphics[width=\linewidth]{pic/nvm-list-exp.pdf}
-    \end{figure}
-
-    \vfill
-    访存操作乱序写回，导致链表的数据结构产生不一致
 \end{frame}
 
 \begin{frame}{内存模型的语义框架}
@@ -331,6 +323,82 @@
 		\end{column}
 	\end{columns}
 \end{frame}
+
+\begin{frame}{语义建模方式的对比}
+    \begin{itemize}
+        \item 操作语义适合作为程序逻辑的基础
+        \begin{itemize}
+            \item 基于不变式综合的验证方法（\S~6）
+        \end{itemize}
+        \item 声明语义更加适合自动化的验证
+        \begin{itemize}
+            \item 基于鲁棒性检验的验证方法（\S~5）
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{正确性条件}
+
+    无论采取何种语义和验证方式，NVM正确性保障的目标相同，即证明其\highlight{崩溃一致性}：
+    \vfill
+    \begin{block}{崩溃一致性}
+        称运行于NVM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性内存状态都满足给定的安全属性$\phi$。
+    \end{block}
+    \vfill
+    直观理解：无论如何崩溃，程序恢复后的状态必然是一致的。
+\end{frame}
+% \begin{frame}{研究对象}
+%     \begin{minipage}[c]{0.55\linewidth}
+%         \begin{figure}
+%             \centering
+%             \includegraphics[width=\linewidth]{pic/memory-wall.png}
+%         \end{figure}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}[c]{0.4\linewidth}
+%         本课题研究近年涌现出的一批新型并发系统及其内存模型，探索其语义建模与验证技术。
+%         \vfill
+%         \begin{itemize}
+%             \item 安全攸关系统的数据安全$\rightarrow$\\ \highlight{非易失性内存系统}
+%             \item 内存墙问题$\rightarrow$\\ \highlight{分离式共享内存系统}
+%         \end{itemize}
+%     \end{minipage}
+% \end{frame}
+
+% \begin{frame}{崩溃}
+%     这类新型并发系统的特点是\highlight{崩溃}会影响程序执行；而传统的内存模型框架并未考虑崩溃这一维度。
+
+%     \vfill
+%     \centering
+%     \small
+%     \renewcommand{\arraystretch}{1.2}
+%     \begin{tabular}{c|c|c}
+%     	传统多线程并发程序 & 非易失性内存系统 & 分离式共享内存系统 \\
+%         \midrule
+%     	\includegraphics[height=0.14\textwidth]{pic/dimm.png}
+%     	    & \includegraphics[height=0.14\textwidth]{pic/optane.png}
+%     	    & \includegraphics[height=0.14\textwidth]{pic/cxl.png} \\
+%     	单机        & 单机       & 分布式       \\
+%     	DRAM      & NVM     & DSM       \\
+%     	---       & 2019（傲腾） & 2023（CXL） \\
+%     	无崩溃模型     & 完全崩溃模型   & 部分崩溃模型    \\
+%     \end{tabular}
+% \end{frame}
+
+\begin{frame}{研究思路与论文结构}
+    \centering
+    \includegraphics[width=0.85\linewidth]{pic/methodology.pdf}
+\end{frame}
+
+\section[单机语义]{非易失性内存系统及其内存模型}
+
+\begin{frame}{内存层级}
+    非易失性内存系统和常见的架构类似，采用CPU-缓存-主存的内存层级。
+    \begin{figure}
+        \includegraphics[width=0.6\linewidth]{pic/nvmm-hierarchy.pdf}
+    \end{figure}
+\end{frame}
+
 
 \begin{frame}{操作语义}
     \centering
@@ -456,29 +524,7 @@
 	\end{block}
 \end{frame}
 
-\begin{frame}{语义建模方式的对比}
-    \begin{itemize}
-        \item 操作语义易于理解，适合作为程序逻辑的基础
-        \begin{itemize}
-            \item 基于不变式综合的验证方法（\S~5）
-        \end{itemize}
-        \item 声明语义更加简洁，适合自动化的验证
-        \begin{itemize}
-            \item 基于鲁棒性检查的验证方法（\S~4）
-        \end{itemize}
-    \end{itemize}
-\end{frame}
 
-\begin{frame}{正确性条件}
-
-    无论采取何种语义和验证方式，NVM正确性保障的目标相同，即证明其\highlight{崩溃一致性}：
-    \vfill
-    \begin{block}{崩溃一致性}
-        称运行于NVM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性内存状态都满足给定的安全属性$\phi$。
-    \end{block}
-    \vfill
-    直观理解：无论如何崩溃，程序恢复后的状态必然是一致的。
-\end{frame}
 
 \section[分布式语义]{分离式共享内存系统及其内存模型}
 
@@ -750,7 +796,7 @@
 \end{frame}
 
 
-\section{基于鲁棒性检查的验证方法}
+\section{基于鲁棒性检验的验证方法}
 
 \begin{frame}{鲁棒性}
     \begin{itemize}
