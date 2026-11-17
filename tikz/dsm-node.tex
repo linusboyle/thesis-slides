@@ -1,0 +1,46 @@
+% 「节点」一帧中的 DSM 结构示意图（取自「操作语义」一帧的静态底图）。
+% 由 ../Makefile 编译为 tikz/dsm-node.pdf。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[
+    x=1cm, y=1cm, font=\small,
+    processor/.style={draw=tsinghua!85!black, line width=0.75pt},
+    cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
+                minimum width=1.05cm, minimum height=0.78cm, align=center},
+    buffer/.style={draw=black!55, fill=blue!16,
+                   minimum width=1.9cm, minimum height=0.78cm, align=center},
+    cache/.style={draw=black!55, fill=gray!28,
+                  minimum width=1.5cm, minimum height=0.78cm, align=center},
+    memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
+                   minimum width=2.15cm, minimum height=4cm, align=center},
+    flow/.style={->, line width=0.75pt, black!75}
+]
+    \draw[processor] (0,3.1) rectangle (6.2,5.05);
+    \node[anchor=north west] at (0.18,5) {处理节点1};
+    \node[cpu] (cpu1) at (1.15,3.88) {CPU};
+    \node[buffer] (buffer1) at (3.1,3.88) {写缓冲区};
+    \node[cache] (cache1) at (5.25,3.88) {缓存};
+
+    \draw[processor] (0,0.45) rectangle (6.2,2.4);
+    \node[anchor=south west] at (0.18,0.5) {处理节点2};
+    \node[cpu] (cpu2) at (1.15,1.57) {CPU};
+    \node[buffer] (buffer2) at (3.1,1.57) {写缓冲区};
+    \node[cache] (cache2) at (5.25,1.57) {缓存};
+
+    \node[memory] (mem) at (9.0,2.72) {};
+    \node[align=center] at ([yshift=0.43cm]mem.center) {内存节点 \\ （主存）};
+
+    \draw[flow] (cpu1.east) -- (buffer1.west);
+    \draw[flow] (buffer1.east) -- (cache1.west);
+    \draw[flow] (cpu2.east) -- (buffer2.west);
+    \draw[flow] (buffer2.east) -- (cache2.west);
+    \draw[flow] (cache1.east) -- (mem.west |- cache1.east);
+    \draw[flow] (cache2.east) -- (mem.west |- cache2.east);
+    \draw[flow] ([xshift=-0.3cm]cache1.south) -- ([xshift=-0.3cm]cache2.north);
+    \draw[flow] ([xshift=0.3cm]cache2.north) -- ([xshift=0.3cm]cache1.south);
+\end{tikzpicture}
+\end{document}

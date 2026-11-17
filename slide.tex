@@ -533,22 +533,44 @@
 \end{frame}
 
 
-\section[分布式语义]{分离式共享内存系统及其内存模型}
+\section[分布式语义]{非易失性内存在部分崩溃模型下的形式化语义}
 
 \begin{frame}{内存层级}
-    \centering
-    和NVM不同， DSM 是一种多节点的分布式系统
 
     \begin{figure}
         \includegraphics[width=0.8\linewidth]{pic/cxl.pdf}
     \end{figure}
+    \vfill
+
+    通过互连装置，NVM可被扩展到分布式场景
+    \begin{itemize}
+        \item 有别于传统的消息传递范式，节点间直接共享内存
+        \item 除前述特性，影响NVM语义的主要是以节点为粒度的部分崩溃
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{节点}
+    % 图独立存放在 tikz/dsm-node.tex，由 Makefile 预编译。
+    \centering
+    \includegraphics{tikz/dsm-node.pdf}
+
+    \vfill
 
     \begin{itemize}
-        \item 节点：崩溃发生的最小单元
-        \begin{itemize}
-            \item 处理节点：代表一台机器，运行若干线程
-            \item 内存节点：包含若干共享变量的地址
-        \end{itemize}
+        \item 处理节点：代表一台机器，其上可以运行若干线程
+        \item 内存节点：包括一段地址，对应若干共享变量
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{崩溃}
+    \centering
+    \includegraphics{tikz/dsm-node.pdf}
+
+    \vfill
+    \begin{itemize}
+        \item 节点是崩溃发生的最小单元
+        \item 当处理节点崩溃时，其上的所有缓冲区被重置，数据丢失
+        \item 当内存节点崩溃时，除非该节点是NVM，否则其上数据丢失
     \end{itemize}
 \end{frame}
 
