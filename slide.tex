@@ -879,7 +879,9 @@
         称运行于NVM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性内存状态都满足给定的安全属性$\phi$。
     \end{block}
     \vfill
-    验证崩溃一致性要求用户给出规约
+    \begin{center}
+        验证崩溃一致性要求用户给出规约，但这通常比较困难。
+    \end{center}
 \end{frame}
 
 \begin{frame}{鲁棒性}
@@ -894,7 +896,10 @@
 \end{frame}
 
 \begin{frame}{总体思路}
-    检查鲁棒性要求遍历程序状态，并依次检查其可达性。例如，对于程序$a \assigns 1 \parallel b \assigns 1$
+    鲁棒性检验要求遍历可能的NVM状态，并依次检查是否可达；此外，需检查其是否在无崩溃情况下可达。
+    
+    \vfill
+    例如，对于程序$a \assigns 1 \parallel b \assigns 1$
 
     \vfill
     \centering
@@ -920,7 +925,7 @@
 \begin{frame}{恢复观测线程}
     由数学归纳法，只需检查给定状态是否在一次崩溃后可达。
     \vfill
-    恢复观测线程是在原本程序之外的一个\highlight{虚拟线程}，包含对所有内存位置的一次读取，其可用于将状态嵌入到崩溃前的执行图中。
+    恢复观测线程是在原本程序之外的一个\highlight{虚拟线程}，包含对所有内存位置的一次读取，作用是将NVM状态嵌入到崩溃前的执行图中。
 
     \begin{columns}
     	\begin{column}{0.4\textwidth}
@@ -941,14 +946,26 @@
 \end{frame}
 
 \begin{frame}{DTPO约束}
-    除已有的NVM的公理，使用恢复观测线程得到的执行图需额外满足一定条件。为此定义关于刷新指令的DTPO约束：
+    除前述的 NVM公理，带有恢复观测线程的执行图需额外满足一定条件，方能准确建模语义。
+    
+    \vfill
+    为此定义关于刷新指令的DTPO约束：
     \[
     G.\dtpo \triangleq \bigcup_{x \in \variables} \flushE_x \times \left\{ w \in \writeE_x \mid \exists w' \in \domain(G.\rrf), (w', w) \in G.\mo  \right\}
     \]
+    及额外公理：
     \[
     G.\dtpo; \tpo~\text{是非自反的}
     \]
+\end{frame}
 
+\begin{frame}{直观理解DTPO}
+
+    \vspace{0.2em}
+    \centering
+    % 图独立存放在 tikz/dtpo.tex，由 Makefile 预编译。
+    \includegraphics[scale=0.92]{tikz/dtpo.pdf}
+    
     \begin{block}{直观}
         刷新指令的效果是缓存中的值立刻写回主存。因此，假设恢复观测线程读到$w'$，则$w'$后发生的写事件$w$都一定发生在刷新指令之后，否则与恢复后观测到$w'$的事实矛盾。
     \end{block}
@@ -993,7 +1010,7 @@
 \end{frame}
 
 \begin{frame}{实现与评估}
-    针对 NVM 程序的算法实现于原型工具 \pmverify 中。在PMDK \texttt{libpmemobj} 测试集上与动态工具 \psan 进行对比。
+    针对 NVM 程序的算法实现于原型工具 \pmverify 中。在PMDK \texttt{libpmem} 测试集上与动态工具 \psan 进行对比。
     
     \vfill
     \centering
@@ -1011,7 +1028,7 @@
 	\end{tabular}
 \end{frame}
 
-\section{基于不变式综合的验证方法}
+\section[不变式综合]{基于不变式综合的形式化验证方法}
 
 \begin{frame}{程序逻辑}
     另一种常见的验证方法是基于程序逻辑生成验证条件
@@ -1032,7 +1049,7 @@
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{一种面向NVM的程序逻辑（\S~5.3）}
+\begin{frame}{一种面向NVM的程序逻辑}
 
     在Owicki-Gries推理的基础上可以得到一种适用于 NVM 的程序逻辑。
     \vfill
@@ -1062,7 +1079,7 @@
 		\label{def:stability}
 	\end{definition}
     \vfill
-    稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定写回副本的过程。
+    稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定地写回副本的过程。
 \end{frame}
 
 \begin{frame}{示例}
@@ -1098,7 +1115,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{示例}
+\begin{frame}{VC编码示例}
 	\begin{align*}
 		\psi & \triangleq x = y = z = a = x' = y' = z' = 0 \rightarrow I_1(x, y, z, a, x', y', z') \ldots \tag{初始化}                          \\
 		     & \land I_1(x, y, z, a, x', y', z') \land x' = 1 \rightarrow I_2(x', y, z, a, x', y', z') \ldots \tag{有效性}                      \\
@@ -1140,7 +1157,7 @@
 \begin{frame}{验证方法对比}
     \begin{itemize}[<+->]
         \item 两者都通过某种方式将崩溃消除，只考虑无崩溃执行
-        \item 都需要额外的约束建模崩溃的语义：DTPO约束 v.s. 稳定性约束
+        \item 都需要额外的约束以建模崩溃：DTPO约束 v.s. 稳定性约束
         \item 鲁棒性验证基于声明语义，而不变式综合基于操作语义
         % \item 声明语义要求访存操作有限，故处理无界循环时有误报
     \end{itemize}
@@ -1149,25 +1166,28 @@
 \section{总结与展望}
 
 \begin{frame}{本文总结}
-    本课题聚焦带崩溃的并发系统及其新型内存模型的形式化语义与验证方法，以非易失性内存系统与分离式共享内存系统为例进行讨论。
+    本课题聚焦在带有非易失性内存的系统上运行的并发程序，研究其形式化语义及验证方法
     \begin{itemize}
-        \item 内存模型的形式化语义：
+        \item NVM的形式化语义：
         \begin{itemize}
-            \item 语义框架：\S~2
-            \item 完全崩溃系统的语义：\S~3
-            \item 部分崩溃系统的语义：\S~6、7
+            \item 内存建模语义框架：\S~2
+            \item 完全崩溃模型下的语义：\S~3
+            \item 部分崩溃模型下的语义：\S~4
         \end{itemize}
-        \item 形式化验证：
+        \item NVM的形式化验证：
         \begin{itemize}
-            \item 基于声明语义的鲁棒性验证：\S~5
-            \item 基于操作语义的不变式生成：\S~6        \end{itemize}
+            \item 基于声明语义的鲁棒性检验：\S~5
+            \item 基于操作语义的不变式综合：\S~6        
+        \end{itemize}
     \end{itemize}
 \end{frame}
 
 \begin{frame}{研究展望}
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item 扩展语义框架：异构计算、拜占庭式崩溃、副作用、动态节点分配与施放等
-        \item 扩展验证方法：部分崩溃系统、活性属性等
+        \item 扩展验证方法：部分崩溃、活性属性（终止性）、可线性化、组合与模块化验证等
+        \item 语义模型验证：在真实硬件（CXL等）上进行验证
+        \item ……
     \end{itemize}
 \end{frame}
 
@@ -1179,6 +1199,12 @@
 %     % 如果参考文献太多的话，可以像下面这样调整字体：
 %     % \tiny\bibliographystyle{alpha}
 % \end{frame}
+
+\begin{frame}
+    \begin{center}
+        {\Huge \highlight{系统演示}}
+    \end{center}
+\end{frame}
 
 \begin{frame}
     \begin{center}
