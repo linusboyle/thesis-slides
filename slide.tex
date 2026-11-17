@@ -399,7 +399,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{操作语义}
+\begin{frame}{操作语义（Px86）}
     以示例1为例，考虑程序$a \assigns 1; b \assigns 1;$
     \centering
     \vfill
@@ -563,18 +563,35 @@
 \end{frame}
 
 \begin{frame}{崩溃}
+    % 图独立存放在 tikz/dsm-crash-processor.tex，由 Makefile 预编译。
     \centering
-    \includegraphics{tikz/dsm-node.pdf}
+    \includegraphics{tikz/dsm-crash-processor.pdf}
 
     \vfill
     \begin{itemize}
+        \item 分布式场景下的NVM采用\highlight{部分崩溃模型}
         \item 节点是崩溃发生的最小单元
-        \item 当处理节点崩溃时，其上的所有缓冲区被重置，数据丢失
-        \item 当内存节点崩溃时，除非该节点是NVM，否则其上数据丢失
+        \item 处理节点崩溃时，其上的所有缓冲区被重置，数据丢失
     \end{itemize}
 \end{frame}
 
-\begin{frame}[label=example]{示例}
+\begin{frame}{崩溃}
+    % 图独立存放在 tikz/dsm-crash-memory.tex，由 Makefile 预编译。
+    \centering
+    \includegraphics{tikz/dsm-crash-memory.pdf}
+
+    \vfill
+    \begin{itemize}
+        \item 分布式场景下的NVM采用\highlight{部分崩溃模型}
+        \item 节点是崩溃发生的最小单元
+        \item 内存节点崩溃时，除非该节点是NVM，否则其上数据丢失
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{示例3}
+    \centering
+    回顾示例3，如何刻画NVM下表现出的该程序行为？
+    \vfill
 	\begin{concurrentcode}
 		x \assigns 1; & a \assigns x; \expected{// 1}               \\
 		& b \assigns x; \expected{// 0}                  \\
@@ -582,16 +599,16 @@
 
     \begin{itemize}
         \item x86/TSO: 不合法
-        \item NVM: 不合法
-        \item DSM: 合法
+        \item NVM（单机）: 不合法
+        \item NVM（分布式）: 合法
+        \begin{enumerate}
+            \item 假设线程运行于不同的处理节点
+            \item 假设变量$x$的地址处于非易失性内存构成的节点上
+        \end{enumerate}
     \end{itemize}
-
-    \vfill
-    \centering
-    如何刻画上述程序行为？
 \end{frame}
 
-\begin{frame}{操作语义（\S~6.2）}
+\begin{frame}{操作语义（DTSO）}
     \centering
     \begin{tikzpicture}[
         x=1cm, y=1cm, font=\small,
@@ -703,7 +720,7 @@
     \begin{itemize}
         \item<4-> 缓存一致性使处理节点2能读到 $x = 1$
         \item<5-> 处理节点崩溃导致写缓冲区和缓存数据丢失、线程从头恢复执行
-        \item<8-> 写入使缓存行失效
+        \item<8-> 对x的新的写入使缓存行失效
     \end{itemize}
 \end{frame}
 
@@ -714,15 +731,25 @@
 %     \end{definition}
 % \end{frame}
 
-\begin{frame}{声明语义（\S~6.4）}
+\begin{frame}{声明语义：执行链}
 
-    对于DSM而言，声明语义由执行图与崩溃的交错序列构成的\highlight{执行链}刻画。
+    分布式场景下的NVM声明语义由执行图与崩溃的交错序列$G_1, \Xi_1, G_2, \Xi_2, \ldots, \Xi_{n-1}, G_n$刻画，称为\highlight{执行链}。
+
+    \vfill
     
     \begin{itemize}
         \item 执行链中的每一张图表示一次无崩溃执行。
-        \item 相邻的执行图的事件集并不独立，取决于崩溃的范围。
+        \item 每张执行图部分继承上一张执行图的事件集，取决于崩溃发生的位置。
     \end{itemize} 
+    \begin{align*}
+    	\nabla_x(G, \Xi) & = \{(\bot, 0, \writeE(x, m(G, \Xi)(x)))\}                                                                      \\
+    	                 & \cup \{(\theta(x) \setminus \Xi, 0, \writeE(x, \valw(\zeta(x)))) \mid \theta(x) \setminus \Xi \neq \emptyset\} \\
+    	                 & \cup \{e \mid e \in E_x \setminus V_x \land \node(\src(e)) \not\in\Xi\}
+    \end{align*}
 
+    \vfill
+
+    直观上讲：崩溃所影响的节点数据将丢失，除非其已到达具有NVM的内存节点，或者已被其它未崩溃的处理节点缓存
 \end{frame}
 
 \begin{frame}{执行链示例}
@@ -783,22 +810,77 @@
     \end{tabular}
 \end{frame}
 
-\begin{frame}{DSM的变体（\S~7）}
-    由于CXL标准目前并不成熟，实际对DSM架构的认识并不完全一致，从而使DSM在若干方面存在变体：
+\begin{frame}{非易失性内存的变体}
+    
+    根据对底层架构的不同假设，NVM的语义也会发生变化。特别地，由于互连装置标准目前并不成熟，相关研究对分布式共享内存系统的认识并不统一，从而使NVM在若干方面存在语义变体。
+
+    \vfill
+    论文研究了如下语义变体，为每个变体给出了形式化定义：
 
     \begin{itemize}
-        \item 缓存一致性协议
-        \item 写回策略
+        \item 写回策略（MESI风格）
+        \item 节点间缓存不一致
         \item 缓存行污染机制
         \item 非时序性写回指令
-        \item ……
+        \item 强持久模型
     \end{itemize}
     
-    本文也为相应的变体进行了形式化，并证明了其相对于DSM内存模型的强弱关系。
 \end{frame}
 
+\begin{frame}{语义变体示例：MESI}
+    \begin{concurrentcode}
+        x \assigns 1; & a \assigns x; \expected{// 1} \\
+                      & b \assigns x; \expected{// 0} \\
+    \end{concurrentcode}
 
-\section{基于鲁棒性检验的验证方法}
+    \centering
+    % 图独立存放在 tikz/mesi.tex，由 Makefile 预编译。
+    \includegraphics{tikz/mesi.pdf}
+
+    \vfill
+    \small
+    处理节点2执行 $a \assigns x$ 前，处理节点1缓存中的写需先写回主存。
+\end{frame}
+
+\begin{frame}{比较内存模型的强弱}
+
+    \begin{center}
+        NVM在不同场景下的语义差异是什么？
+    \end{center}
+
+    由于目前大量的相关研究所使用的内存模型不同，确定其强弱关系对于理解相关系统的兼容性至关重要。
+    \vfill
+
+    \begin{block}{精化}
+        若对任意程序 $P$，在 $M_1$ 下可达的每个程序状态 $s \in Q_P$ 在 $M_2$ 下也可达，则称 $M_1$ 精化 $M_2$，记作 $M_1 \preccurlyeq M_2$。
+    \end{block}
+
+    \vfill
+    如果$M_1 \preccurlyeq M_2$成立，则任何在 $M_2$ 下成立的安全属性在 $M_1$ 下也同样成立。因此，假设存在某系统基于$M_2$语义开发，那么在$M_1$下其正确性依然成立。
+\end{frame}
+
+\begin{frame}{内存模型一览}
+    \centering
+    % 图独立存放在 tikz/model-lattice.tex，由 Makefile 预编译。
+    \includegraphics{tikz/model-lattice.pdf}
+
+    \vfill
+    \small
+    $\longrightarrow$：严格强于（精化）；$\longleftrightarrow$：等价；虚线框内模型与 DTSO 不可比较。
+\end{frame}
+
+\section[鲁棒性检验]{基于鲁棒性检验的形式化验证方法}
+
+\begin{frame}{正确性条件}
+
+    回顾崩溃一致性的定义：
+    \vfill
+    \begin{block}{崩溃一致性}
+        称运行于NVM的程序是崩溃一致的，当且仅当在其执行的任意时刻，其非易失性内存状态都满足给定的安全属性$\phi$。
+    \end{block}
+    \vfill
+    验证崩溃一致性要求用户给出规约
+\end{frame}
 
 \begin{frame}{鲁棒性}
     \begin{itemize}

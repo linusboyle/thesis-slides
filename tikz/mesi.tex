@@ -1,0 +1,62 @@
+% 「语义变体示例：MESI」一帧中的示意图。
+% 处理节点2读取 x 前，处理节点1缓存中被修改的缓存行必须先写回主存。
+% 由 ../Makefile 编译为 tikz/mesi.pdf。
+\documentclass[11pt]{standalone}
+
+\input{tikz/fig-preamble.tex}
+
+\begin{document}
+\kaishu
+\begin{tikzpicture}[
+    x=1cm, y=1cm, font=\small,
+    processor/.style={draw=tsinghua!85!black, line width=0.75pt},
+    cpu/.style={draw=tsinghua!85!black, fill=tsinghua!10,
+                minimum width=1.05cm, minimum height=0.78cm, align=center},
+    buffer/.style={draw=black!55, fill=blue!16,
+                   minimum width=1.9cm, minimum height=0.78cm, align=center},
+    cache/.style={draw=black!55, fill=gray!28,
+                  minimum width=1.5cm, minimum height=0.78cm, align=center},
+    memory/.style={draw=tsinghua!85!black, fill=tsinghua!12,
+                   minimum width=2.15cm, minimum height=4cm, align=center},
+    flow/.style={->, line width=0.75pt, black!75},
+    operation/.style={draw=tsinghua!90!black, fill=yellow!55,
+                      inner sep=2pt, font=\scriptsize},
+    writeback/.style={->, line width=1.2pt, orange!85!black},
+    read/.style={->, line width=1.2pt, teal!70!black}
+]
+    \draw[processor] (0,3.1) rectangle (6.2,5.05);
+    \node[anchor=north west] at (0.18,5) {处理节点1};
+    \node[cpu] (cpu1) at (1.15,3.88) {CPU};
+    \node[buffer] (buffer1) at (3.1,3.88) {写缓冲区};
+    \node[cache] (cache1) at (5.25,3.88) {缓存};
+
+    \draw[processor] (0,0.45) rectangle (6.2,2.4);
+    \node[anchor=south west] at (0.18,0.5) {处理节点2};
+    \node[cpu] (cpu2) at (1.15,1.57) {CPU};
+    \node[buffer] (buffer2) at (3.1,1.57) {写缓冲区};
+    \node[cache] (cache2) at (5.25,1.57) {缓存};
+
+    \node[memory] (mem) at (9.0,2.72) {};
+    \node[align=center] at ([yshift=0.55cm]mem.center) {内存节点 \\ （主存）};
+    \node at ([yshift=-0.55cm]mem.center) {$x \mapsto 1$};
+
+    \draw[flow] (cpu1.east) -- (buffer1.west);
+    \draw[flow] (buffer1.east) -- (cache1.west);
+    \draw[flow] (cpu2.east) -- (buffer2.west);
+    \draw[flow] (buffer2.east) -- (cache2.west);
+    \draw[flow] ([xshift=-0.3cm]cache1.south) -- ([xshift=-0.3cm]cache2.north);
+    \draw[flow] ([xshift=0.3cm]cache2.north) -- ([xshift=0.3cm]cache1.south);
+
+    % 处理节点1中尚未写回的修改。
+    \node[operation] at (cache1.center) {$x \assigns 1$};
+
+    % 处理节点2读取 x。
+    \node[operation] at (cpu2.center) {$a \assigns x$};
+
+    % ① 先把修改过的缓存行写回主存，② 处理节点2才能读到新值。
+    \draw[writeback] (cache1.east) -- node[above, font=\scriptsize] {\ding{172} 写回}
+        (mem.west |- cache1.east);
+    \draw[read] (mem.west |- cache2.east) -- node[below, font=\scriptsize] {\ding{173} 读 $x = 1$}
+        (cache2.east);
+\end{tikzpicture}
+\end{document}
