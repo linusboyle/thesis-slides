@@ -16,7 +16,7 @@
 \title{面向非易失性内存的并发程序形式化语义与验证方法研究}
 % \subtitle{博士学位论文答辩}
 \institute{清华大学软件学院}
-\date{\today}
+\date{2026 年 11 月 19 日}
 \usepackage{Tsinghua}
 
 % defs
@@ -1062,11 +1062,9 @@
             \item 崩溃后，从NVM恢复的值是$x'$。
         \end{enumerate}
     \end{block}
-    \vfill
-    可以证明引入辅助变量后的内存模型和原始的模型语义等价。
 \end{frame}
 
-\begin{frame}{稳定性}
+\begin{frame}{稳定性约束}
 	除引入辅助变量，证明中的所有公式还需额外满足\highlight{稳定性}约束。
 
 	\vfill
@@ -1080,6 +1078,8 @@
 	\end{definition}
     \vfill
     稳定性约束无法用霍尔推导规则的形式给出。其在逻辑层面描述了共享变量非确定地写回副本的过程。
+    \vfill
+    可以证明引入辅助变量和稳定性约束后的内存模型和原始的模型语义等价。
 \end{frame}
 
 \begin{frame}{示例}
